@@ -1,0 +1,49 @@
+{{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: daemonset-extra-config
+  namespace: {{ .Release.Namespace }}
+data:
+  daemonset.extraconfig.yaml: |
+  {{- if .Values.defender.annotations }}
+    annotations:
+    {{- range $key, $val := .Values.defender.annotations }}
+      {{ $key }}: {{ $val }}
+    {{- end}}
+  {{- end}}
+  {{- if .Values.defender.proxy.httpProxy }}
+    proxy:
+      httpProxy: {{ .Values.defender.proxy.httpProxy | quote }}
+    {{- if .Values.defender.proxy.ca }}
+      ca: {{ .Values.defender.proxy.ca | quote }}
+    {{- end }}
+    {{- if .Values.defender.proxy.noProxy }}
+      noProxy: {{ .Values.defender.proxy.noProxy | quote }}
+    {{- end }}
+    {{- if .Values.defender.proxy.password }}
+      password: {{ .Values.defender.proxy.password | quote }}
+    {{- end }}
+    {{- if .Values.defender.proxy.user }}
+      user: {{ .Values.defender.proxy.user | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defender.tolerations }} 
+    tolerations:
+    {{- range $toleration := .Values.defender.tolerations }}
+      {{- if and $toleration.effect $toleration.operator $toleration.key}}
+    - effect: {{ $toleration.effect }}
+      key: {{ $toleration.key }}
+      operator: {{ $toleration.operator }}
+      {{- if $toleration.toleration_seconds }}
+      toleration_seconds: {{ $toleration.toleration_seconds }}
+      {{- end }}
+      {{- if $toleration.value }}
+      value: {{ $toleration.value }}
+      {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end}}   
+
+{{- end}}
+

@@ -1,0 +1,12 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: twistlock-updater-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.job.storage.access_mode }}
+  resources:
+    requests:
+      storage: {{ .Values.job.storage.size }}
+  storageClassName: {{ .Values.job.storage.class_name }}
