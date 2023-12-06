@@ -65,7 +65,7 @@ DEAMONSET_CONFIG = f"{WORKDIR}/twistlock/daemonsetConfig.json"
 DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.yaml"
 NEW_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.new.yaml"
 OLD_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.old.yaml"
-INIT_DEAMONSET_FILE = f"{WORKDIR}/init/daemonset.init.yaml"
+INIT_DEAMONSET_FILE = f"{WORKDIR}/init/daemonset.yaml"
 DEAMONSET_EXTRACONFIG_FILE = f"{WORKDIR}/config/daemonset.extraconfig.yaml"
 DEBUG = os.getenv("DEBUG", "false").lower() in ["true", "1", "y"]
 
