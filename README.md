@@ -1,4 +1,4 @@
-# Prisma Cloud DeamonSet Defender Auto-updater
+# Prisma Cloud DeamonSet Defender Auto Updater
 Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a kubernetes cluster.
 
 ## Requirements
@@ -7,6 +7,10 @@ Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a 
 3. Access to Kubernetes cluster on current workstation via kubectl or helm
 4. Kubernetes storage class (Public cloud providers regularly does have this)
 5. Docker Image Registry
+
+> NOTE
+> * This process was tested on GCP Artifact Registry.
+> <br></br>
 
 ## Installation
 ### 1. Build Image
@@ -65,8 +69,26 @@ As reference you could use the file *twistlock-updater.yaml* found on this repos
 $ kubectl apply -f twistlock-updater.yaml
 ```
 
-The variables **PRISMA_USERNAME**, **PRISMA_PASSWORD** and **DOCKER_CONFIG** must be encoded in base64
+The variables **PRISMA_USERNAME**, **PRISMA_PASSWORD** and **DOCKER_CONFIG** must be encoded in base64.
 
-> NOTE
-> * This process was tested using GCP Artifact Registry.
-> <br></br>
+
+## Least privilege permissions
+### Prisma Cloud SaaS version
+In order to grant the least privileges to a user or service account in the SaaS version of Prisma Cloud, you must create a Permissions Group with View and Update for the Defenders Management permission and View for System permission. While you are creating a Permissions Group, the Defenders Management and System permissions can be found under **Assing Permissions** > **Compute** > **Manage** as in the following image:
+
+![Least Privileges Permissions Group - Prisma Cloud SaaS version](./images/saas-least-privileges.png)
+
+Once created this permissions group, you must create a role and then the belonging user or service account.
+
+>**NOTE**
+> * You must assing an account group to the role. Be sure to add the account groups of the accounts you need to modify. 
+> * Is recommended to use a service account and access key.
+> <br/><br/>
+
+### Prisma Cloud self-hosted version
+In order to grant the least privileges to a user in the self-hosted version of Prisma Cloud, you must create a role with Read and Write for the Defenders Management permission, Read for System permission and no access to the Console IU. While you are creating a Role, the Collections and Tags permission can be found under the Manage tab as in the following image:
+
+![Least Privileges Role - Prisma Cloud self-hosted version](./images/self-hosted-least-privileges.png)
+
+Once created this role, you must create the belonging user.
+
