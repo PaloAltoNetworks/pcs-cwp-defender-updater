@@ -1,68 +1,67 @@
 compute:
-  api_endpoint: 
-  username: 
-  password: 
-  skip_verify: false
+  api_endpoint:                 # *Endpoint of Prisma Cloud Compute Console. Can be found under System > Utilities
+  username:                     # *Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
+  password:                     # *Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
+  skip_verify: false            # Skip TLS verification
  
 job:
-  schedule: "0 0 * * Sun"
-  timezone: "Etc/UTC" #Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
-  image_name: 
-  image_pull_secret: 
-  pull_secret_dockerconfigjson: 
-  role_arn:
-  cluster_role_name: twistlock-updater-clusterrole
-  storage:
-    access_mode: ReadWriteOnce
-    size: 1Gi
-    class_name: default
-  debug: false
-  init_configmap: 
-  annotations:
+  schedule: "0 0 * * Sun"       # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+  timezone: "Etc/UTC"           # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
+  image_name:                   # *Name of the image to be used.
+  image_pull_secret:            # Name of the secret needed to pull the CronJob image.
+  pull_secret_dockerconfigjson: # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created
+  role_arn:                     # AWS role ARN for CronJob
+  storage:                      # Storage settings for PersistantVolumeClaim. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+    access_mode: ReadWriteOnce  # Storage access mode for CronJob Persistant Volume
+    size: 1Gi                   # Storage size for CronJob Persistant Volume
+    class_name: default         # Storage class for CronJob Persistant Volume
+  debug: false                  # Print extended output of the CronJob
+  init_configmap:               # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
+  annotations:                  # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 
 defender:
-  console_name: ""
-  communication_port: ""
-  orchestrator: kubernetes
-  container_runtime: containerd
-  collect_pod_labels: false
-  monitor_service_accounts: false
-  cluster_name: ""
-  runtime_socket_path: ""
-  node_selector: ''
-  role_arn: "" 
-  unique_hostname: false 
-  monitor_istio: false
-  bottlerocket: false
-  gke_autopilot: false
-  talos: false
-  image_name: ""
-  image_pull_secret: ""
-  selinux: false
-  privileged: false
-  cpu_limit: 0
-  memory_limit: 0
-  priority_class_name: ""
-  project_id: ""
-  region: ""
-  proxy:
-    ca:
-    httpProxy:
-    noProxy:
-    password:
-    user:
-  tolerations:
-#  - effect: NoSchedule 
+  console_name: ""              # Name of the console to be connected to. Not needed for SaaS version. For self-hosted, if not set, it will take the first SAN Name that appears under Manage > Defenders > Names
+  communication_port: ""        # Overrides the Defender - Console default communication port.
+  orchestrator: kubernetes      # Orchestartor to be used. Only tested with kubernetes
+  container_runtime: containerd # Name of container runtime to be used. Can be only the following values: docker, containerd or crio.
+  collect_pod_labels: false     # Allow collection of labels on pods
+  monitor_service_accounts: false # Allow service account monitoring
+  cluster_name: ""              # Overrides the name of the cluster to be used. By default, the defender detects the cluster name
+  runtime_socket_path: ""       # Container runtime socket path
+  node_selector: ''             # Specify on which nodes will the deamonset apply to. Format: 'key: "value"'
+  role_arn: ""                  # AWS role ARN for DaemonSet defender 
+  unique_hostname: false        # Assign unique hostnames to each defended host
+  monitor_istio: false          # Allow istio monitoring
+  bottlerocket: false           # Deployment made over BottleRocket OS nodes
+  gke_autopilot: false          # Deployment made over GKE Autopilot
+  talos: false                  # Deployment made over Talos nodes
+  image_name: ""                # Overrides the default defender image to be used
+  image_pull_secret: ""         # Secret for pulling the defender image
+  selinux: false                # Deployment made using SELinux Policies
+  privileged: false             # Set DaemonSet Pods as Privileged 
+  cpu_limit: 0                  # Sets the limit of Defender CPU usage
+  memory_limit: 0               # Sets the limit of Defender Memory usage
+  priority_class_name: ""       # Name of the PriorityClass. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+  project_id: ""                # Project ID where the Defender is going to point to. Used for self-hosted only.
+  region: ""                    # Cloud region where the cluster is localed
+  proxy:                        # Proxy settings. Needed if defender requires to connect to a proxy before connecting to the compute console
+    ca:                         # CA Bundle for connecting to the proxy
+    httpProxy:                  # Proxy URL
+    noProxy:                    # Pods that bypass the proxy
+    password:                   # Password to be used to connect to the proxy
+    user:                       # User to be used to connect to the proxy
+  tolerations:                  # Tolerations configuration. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+#  - effect: NoSchedule         # Toleration effect
+#    key: key1                  # Toleration key
+#    operator: Equels           # Toleration operator
+#    toleration_seconds: 0      # Toleration seconds
+#    value: value1              # Toleration value
+#  - effect: NoExecute 
 #    key: key1
 #    operator: Exists
 #    toleration_seconds: 0
-#  - effect: NoExecute 
-#    key: key1
-#    operator: Equals
-#    toleration_seconds: 0
-#    value: value1
-  annotations:
+  annotations:                  # Defender DaemonSet annotations
 #    annotation1: test
 
-
+# NOTE: if it has * in it's description, means it is a required value
 
