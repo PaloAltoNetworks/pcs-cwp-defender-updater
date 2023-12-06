@@ -136,9 +136,22 @@ metadata:
 data:
   daemonset.extraconfig.yaml: |
     annotations:
-      defender-version: 32.00.159
+      sample: value
 #    proxy:
+#      ca: "-----BEGIN CERTIFICATE-----"
 #      httpProxy: "https://proxy.example.com:8443"
+#      user: "myuser"
+#      password: "mypasswd"
+#    tolerations:
+#      - effect: NoSchedule 
+#        key: key1
+#        operator: Exists
+#        toleration_seconds: 0
+#      - effect: NoExecute 
+#        key: key1
+#        operator: Equals
+#        toleration_seconds: 0
+#        value: value1
 ---
 apiVersion: batch/v1
 kind: CronJob
