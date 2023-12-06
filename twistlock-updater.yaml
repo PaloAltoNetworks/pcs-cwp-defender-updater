@@ -167,7 +167,7 @@ spec:
           imagePullSecrets:
           - name: twistlock-updater-pull-secret
           containers:
-          - image: us-central1-docker.pkg.dev/cto-sandbox/jmontufar/twistlock-updater@sha256:52b3b5a04b18c84e1625bb10a494ddf89d2f15aec5fbd104a1a6e23492220991
+          - image: {IMAGE_NAME}
             name: twistlock-updater
             env:
             - name: COMPUTE_API_ENDPOINT
