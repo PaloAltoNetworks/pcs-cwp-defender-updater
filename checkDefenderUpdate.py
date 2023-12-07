@@ -44,6 +44,9 @@ MEMORY_LIMIT = int(os.getenv("MEMORY_LIMIT", "0"))
 PRIOROTY_CLASS_NAME = os.getenv("PRIOROTY_CLASS_NAME", "")
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
+PROXY = {}
+TOLERATIONS = []
+ANNOTATIONS = {}
 
 # Manifest variables
 DAEMONSET_NAME = os.getenv("DAEMONSET_NAME", "twistlock-defender-ds")
