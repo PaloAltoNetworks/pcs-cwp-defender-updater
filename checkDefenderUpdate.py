@@ -44,9 +44,6 @@ MEMORY_LIMIT = int(os.getenv("MEMORY_LIMIT", "0"))
 PRIOROTY_CLASS_NAME = os.getenv("PRIOROTY_CLASS_NAME", "")
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
-PROXY = json.loads(os.getenv("PROXY", '{}'))
-TOLERATIONS = json.loads(os.getenv("TOLERATIONS", '[]'))
-ANNOTATIONS = json.loads(os.getenv("ANNOTATIONS", '{}'))
 
 # Manifest variables
 DAEMONSET_NAME = os.getenv("DAEMONSET_NAME", "twistlock-defender-ds")
@@ -301,7 +298,7 @@ def main():
         os.popen(f"cp {INIT_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
 
 
-    print(f"{datetime.now()} Installing defender. Version: {console_version}")
+    print(f"{datetime.now()} Installing defender version {console_version}")
     if DEBUG:
         print(f"{datetime.now()} New defender configuration:\n{new_defender_config}")
 

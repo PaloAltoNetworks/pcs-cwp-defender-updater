@@ -23,3 +23,15 @@ rules:
   verbs: 
   - "create"
   - "delete"
+- apiGroups:
+  - ""
+  resources:
+  - "pods"
+  verbs:
+  - "list"
+- apiGroups:
+  - ""
+  resources:
+  - "pods/log"
+  verbs:
+  - "get"
