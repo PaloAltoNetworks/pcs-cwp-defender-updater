@@ -222,9 +222,15 @@ def configChanged(new_defender_config):
             if feature in defender_config:
                 if defender_config[feature] != new_defender_config[feature]:
                     print(f"{datetime.now()} Change detected in defender configuration.")
+                    if DEBUG:
+                        print(f"{datetime.now()} Current defender configuration:\n{defender_config}")
+                    
                     return True
             else:
                 print(f"{datetime.now()} Change detected in defender configuration.")
+                if DEBUG:
+                        print(f"{datetime.now()} Current defender configuration:\n{defender_config}")
+                    
                 return True
             
         print(f"{datetime.now()} Change not found in defender configuration.")
