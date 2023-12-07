@@ -1,7 +1,8 @@
 compute:
   api_endpoint:                 # *Endpoint of Prisma Cloud Compute Console. Can be found under System > Utilities
-  username:                     # *Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
-  password:                     # *Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
+  username:                     # Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
+  password:                     # Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
+  secret:  compute-secret       # Name of the Secret to be used
   skip_verify: false            # Skip TLS verification
  
 job:
@@ -63,5 +64,7 @@ defender:
   annotations:                  # Defender DaemonSet annotations
 #    annotation1: test
 
-# NOTE: if it has * in it's description, means it is a required value
-
+# NOTES 
+# - If it has * in it's description, means it is a required value
+# - If  the secret compute.secret exists already, there's no need to define the values of compute.username and compute.password
+# - If the secret job.image_pull_secret exists already, there's no need to define the value job.pull_secret_dockerconfigjson

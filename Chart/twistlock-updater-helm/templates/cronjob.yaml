@@ -39,12 +39,12 @@ spec:
             - name: PRISMA_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: compute-secret
+                  name: {{ .Values.compute.secret }}
                   key: username
             - name: PRISMA_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: compute-secret
+                  name: {{ .Values.compute.secret }}
                   key: password
             - name: SKIP_VERIFY
               value: {{ .Values.compute.skip_verify | quote }}
