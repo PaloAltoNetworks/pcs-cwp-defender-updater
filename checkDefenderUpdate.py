@@ -260,6 +260,7 @@ def main():
         console_name = f"{console_name}:{COMMUNICATION_PORT}"
 
     new_defender_config = {
+        "version": console_version,
         "annotations": ANNOTATIONS,
         "bottlerocket": BOTTLEROCKET,
         "cluster": CLUSTER_NAME,
@@ -306,10 +307,11 @@ def main():
     elif os.path.exists(INIT_DEAMONSET_FILE):
         os.popen(f"cp {INIT_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
 
-
-    print(f"{datetime.now()} Installing defender version {console_version}")
     if DEBUG:
         print(f"{datetime.now()} New defender configuration:\n{new_defender_config}")
+
+    print(f"{datetime.now()} Installing defender version {console_version}")
+
 
     applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, new_defender_config, COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
 
@@ -338,6 +340,11 @@ def main():
     else:
         if os.path.exists(DEAMONSET_FILE):
             print(f"{datetime.now()} Defender in incorrect status. Rolling back to previous version.")
+            if DEBUG:
+                with open(DEAMONSET_CONFIG, "r") as config_file:
+                    print(f"Previous defender configuration:\n{config_file.read()}")
+                    config_file.close()
+
             deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api)
             applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, DEAMONSET_FILE)
         else:
