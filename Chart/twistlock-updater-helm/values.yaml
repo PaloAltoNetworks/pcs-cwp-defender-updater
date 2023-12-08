@@ -9,6 +9,7 @@ job:
   schedule: "0 0 * * Sun"       # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
   timezone: "Etc/UTC"           # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
   image_name:                   # *Name of the image to be used.
+  image_pull_policy: Always     # Pull policy of the CronJob image.
   image_pull_secret:            # Name of the secret needed to pull the CronJob image.
   pull_secret_dockerconfigjson: # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created
   role_arn:                     # AWS role ARN for CronJob
