@@ -107,7 +107,7 @@ spec:
               capabilities:
                 drop:
                 - ALL
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: {{ .Values.job.image_pull_policy }}
             volumeMounts:
             - mountPath: /app/twistlock
               name: twistlock-updater-data
