@@ -117,7 +117,7 @@ spec:
             volumeMounts:
             - mountPath: /app/twistlock
               name: twistlock-updater-data
-            {{- if or .Values.defender.annotations .Values.defender.proxy .Values.defender.tolerations }} 
+            {{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
             - mountPath: /app/config
               name: daemonset-extra-config
             {{- end}}
@@ -138,7 +138,7 @@ spec:
           - name: twistlock-updater-data
             persistentVolumeClaim:
               claimName: "twistlock-updater-data"
-          {{- if or .Values.defender.annotations .Values.defender.proxy .Values.defender.tolerations }}
+        {{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
           - name: daemonset-extra-config
             configMap:
               name: daemonset-extra-config
