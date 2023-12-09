@@ -1,0 +1,159 @@
+{{- if .Values.job.start_now }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+{{- if .Values.job.annotations }}
+  {{- range $key, $val := .Values.job.annotations }}
+    {{ $key }}: {{ $val }}
+  {{- end}}
+{{- end}}
+  labels:
+    app: twistlock-updater-start
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: twistlock-updater-start
+  namespace: {{ .Release.Namespace }}
+spec:
+{{- if .Values.job.start_ttl }}
+  ttlSecondsAfterFinished: {{ .Values.job.start_ttl }}
+{{- end }}
+  template:
+    metadata:
+      name: twistlock-updater-start
+      labels:
+        app: twistlock-updater-start
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      serviceAccountName: twistlock-updater-service
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+    {{- if .Values.job.image_pull_secret }}
+      imagePullSecrets:
+      - name: {{ .Values.job.image_pull_secret }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.job.image_name }}
+        name: twistlock-updater-start
+        env:
+        - name: COMPUTE_API_ENDPOINT
+          value: {{ .Values.compute.api_endpoint | quote  }}
+        - name: PRISMA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.compute.secret }}
+              key: username
+        - name: PRISMA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.compute.secret }}
+              key: password
+        - name: SKIP_VERIFY
+          value: {{ .Values.compute.skip_verify | quote }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: CONSOLE_NAME
+          value: {{ .Values.defender.console_name | quote }}
+        - name: COMMUNICATION_PORT
+          value: {{ .Values.defender.communication_port | quote }}
+        - name: ORCHESTRATOR
+          value: {{ .Values.defender.orchestrator | quote }}
+        - name: CONTAINER_RUNTIME
+          value: {{ .Values.defender.container_runtime | quote }}
+        - name: COLLECT_POD_LABELS
+          value: {{ .Values.defender.collect_pod_labels | quote }}
+        - name: MONITOR_SERVICEACCOUNTS
+          value: {{ .Values.defender.monitor_service_accounts | quote }}
+        - name: CLUSTER_NAME
+          value: {{ .Values.defender.cluster_name | quote }}
+        - name: RUNTIME_SOCKET_PATH
+          value: {{ .Values.defender.runtime_socket_path | quote }}
+        - name: NODE_SELECTOR
+          value: {{ .Values.defender.node_selector | squote }}
+        - name: ROLE_ARN
+          value: {{ .Values.defender.role_arn | quote }}
+        - name: UNIQUE_HOSTNAME
+          value: {{ .Values.defender.unique_hostname | quote }}
+        - name: MONITOR_ISTIO
+          value: {{ .Values.defender.monitor_istio | quote }}
+        - name: BOTTLEROCKET
+          value: {{ .Values.defender.bottlerocket | quote }}
+        - name: GKE_AUTOPILOT
+          value: {{ .Values.defender.gke_autopilot | quote }}
+        - name: TALOS
+          value: {{ .Values.defender.talos | quote }}
+        - name: IMAGE_NAME
+          value: {{ .Values.defender.image_name | quote }}
+        - name: IMAGE_PULL_SECRET
+          value: {{ .Values.defender.image_pull_secret | quote }}
+        - name: SELINUX
+          value: {{ .Values.defender.selinux | quote }}
+        - name: PRIVILEGED
+          value: {{ .Values.defender.privileged | quote }}
+        - name: CPU_LIMIT
+          value: {{ .Values.defender.cpu_limit | quote }}
+        - name: MEMORY_LIMIT
+          value: {{ .Values.defender.memory_limit | quote }}
+        - name: PRIORITY_CLASS_NAME
+          value: {{ .Values.defender.priority_class_name | quote }}
+        - name: PROJECT_ID
+          value: {{ .Values.defender.project_id | quote }}
+        - name: REGION
+          value: {{ .Values.defender.region | quote }}
+        - name: DEBUG
+          value: {{ .Values.job.debug | quote }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 10001
+          capabilities:
+            drop:
+            - ALL
+        imagePullPolicy: {{ .Values.job.image_pull_policy }}
+        volumeMounts:
+        - mountPath: /app/twistlock
+          name: twistlock-updater-data
+        {{- if or .Values.defender.annotations .Values.defender.proxy .Values.defender.tolerations }} 
+        - mountPath: /app/config
+          name: daemonset-extra-config
+        {{- end}}
+        {{- if .Values.job.init_configmap }} 
+        - mountPath: /app/init
+          name: daemonset-init-config
+        {{- end}}
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: twistlock-updater-data
+        persistentVolumeClaim:
+          claimName: "twistlock-updater-data"
+      {{- if or .Values.defender.annotations .Values.defender.proxy .Values.defender.tolerations }}
+      - name: daemonset-extra-config
+        configMap:
+          name: daemonset-extra-config
+          items:
+          - key: daemonset.extraconfig.yaml
+            path: daemonset.extraconfig.yaml
+      {{- end }}
+      {{- if .Values.job.init_configmap }}
+      - name: daemonset-init-config
+        configMap:
+          name: daemonset-init-config
+          items:
+          - key: daemonset.init.yaml
+            path: daemonset.init.yaml
+      {{- end }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+{{- end }}
