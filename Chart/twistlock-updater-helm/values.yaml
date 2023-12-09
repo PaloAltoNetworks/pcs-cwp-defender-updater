@@ -20,6 +20,10 @@ job:
   debug: false                  # Print extended output of the CronJob
   init_configmap:               # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
   annotations:                  # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  start_now: false              # Starts a Job to perform the defender installation process
+  start_ttl:                    # Seconds that the start Job will be kept. If set to 0 will delete after the Job succeded or failed
+  successful_cronjobs: 3        # Amount of successfull CronJobs to be kept. If set to 0, none successfull CronJobs will be kept.
+  failed_cronjobs: 1            # Amount of failed CronJobs to be kept. If set to 0, none failed CronJobs will be kept.
 
 defender:
   console_name: ""              # Name of the console to be connected to. Not needed for SaaS version. For self-hosted, if not set, it will take the first SAN Name that appears under Manage > Defenders > Names
