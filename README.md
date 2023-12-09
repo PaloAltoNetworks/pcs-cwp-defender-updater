@@ -57,7 +57,13 @@ Substitute the variables for current values.
 Once done install the helm chart using the following command:
 
 ```bash
-$ helm upgrade --install -n twistlock -f values.yaml --create-namespace twistlock-updater https://raw.githubusercontent.com/PaloAltoNetworks/pcs-cwp-defender-updater/main/Chart/twistlock-updater-helm.tar.gz
+$ helm upgrade --install -n twistlock -f values.yaml --create-namespace twistlock-updater  https://raw.githubusercontent.com/PaloAltoNetworks/pcs-cwp-defender-updater/main/Chart/twistlock-updater-helm.tar.gz
+```
+
+```bash
+$ helm install twistlock-updater -n twistlock -f values.yaml --create-namespace   ./Chart/twistlock-updater-helm
+$ helm upgrade twistlock-updater -n twistlock -f values.yaml ./Chart/twistlock-updater-helm
+$ helm uninstall twistlock-updater -n twistlock
 ```
 
 For more parameters that the *values.yaml* file can support, please refer on this repository to the file *Chart/twistlock-updater-helm/values.yaml*.
