@@ -223,7 +223,7 @@ def configChanged(new_defender_config):
                 if defender_config[feature] != new_defender_config[feature]:
                     print(f"{datetime.now()} Change detected in defender configuration.")
                     if DEBUG:
-                        print(f"{datetime.now()} Current defender configuration:\n{defender_config}")
+                        print(f"Current defender configuration:\n{defender_config}")
                     
                     return True
             else:
@@ -308,7 +308,7 @@ def main():
         os.popen(f"cp {INIT_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
 
     if DEBUG:
-        print(f"{datetime.now()} New defender configuration:\n{new_defender_config}")
+        print(f"New defender configuration:\n{new_defender_config}")
 
     print(f"{datetime.now()} Installing defender version {console_version}")
 

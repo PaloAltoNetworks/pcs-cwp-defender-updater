@@ -1,35 +1,41 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
+{{- if .Values.job.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.job.annotations }}
+    {{ $key }}: {{ $val }}
+  {{- end}}
+{{- end}}
   labels:
     app: twistlock-updater
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
   name: twistlock-updater
   namespace: {{ .Release.Namespace }}
 spec:
   schedule: {{ .Values.job.schedule | quote }}
   timeZone: {{ .Values.job.timezone | quote }}
+  successfulJobsHistoryLimit: {{ .Values.job.successful_cronjobs }}
+  failedJobsHistoryLimit: {{ .Values.job.failed_cronjobs }}
   jobTemplate:
     spec:
       template:
         metadata:
           name: twistlock-updater
           creationTimestamp: null
-{{- if .Values.job.annotations }}
-          annotations:
-  {{- range $key, $val := .Values.job.annotations }}
-            {{ $key }}: {{ $val }}
-  {{- end}}
-{{- end}}
           labels:
             app: twistlock-updater
+            helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         spec:
           serviceAccountName: twistlock-updater-service
           securityContext:
             fsGroup: 10001
             seccompProfile:
               type: RuntimeDefault
+        {{- if .Values.job.image_pull_secret }}
           imagePullSecrets:
           - name: {{ .Values.job.image_pull_secret }}
+        {{- end }}
           containers:
           - image: {{ .Values.job.image_name }}
             name: twistlock-updater
