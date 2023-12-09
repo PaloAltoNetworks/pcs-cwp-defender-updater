@@ -16,7 +16,7 @@ job:
   storage:                      # Storage settings for PersistantVolumeClaim. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
     access_mode: ReadWriteOnce  # Storage access mode for CronJob Persistant Volume
     size: 1Gi                   # Storage size for CronJob Persistant Volume
-    class_name: default         # Storage class for CronJob Persistant Volume
+    class_name:                 # Storage class for CronJob Persistant Volume. If not set, it will use the default Storage Class
   debug: false                  # Print extended output of the CronJob
   init_configmap:               # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
   annotations:                  # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/

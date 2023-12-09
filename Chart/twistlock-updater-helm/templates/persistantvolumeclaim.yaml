@@ -9,4 +9,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.job.storage.size }}
+  {{- if .Values.job.storage.class_name }}
   storageClassName: {{ .Values.job.storage.class_name }}
+  {{- end }}
