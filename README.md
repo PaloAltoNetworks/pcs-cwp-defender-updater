@@ -29,6 +29,12 @@ $ docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
 $ docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 ```
 
+For MacOS is recommended to add the flag *--platform=linux/amd64* to the build command as follows:
+
+```bash
+$ docker build --platform=linux/amd64 -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+```
+
 ### 2. Install CronJob
 You can install either via helm or kubectl. Helm is recommended.
 
