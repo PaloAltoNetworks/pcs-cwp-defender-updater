@@ -1,0 +1,63 @@
+{{- if .Values.job.delete_all }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+{{- if .Values.job.annotations }}
+  {{- range $key, $val := .Values.job.annotations }}
+    {{ $key }}: {{ $val }}
+  {{- end}}
+{{- end}}
+  labels:
+    app: twistlock-updater-delete
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: twistlock-updater-delete
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    metadata:
+      name: twistlock-updater-delete
+      labels:
+        app: twistlock-updater-delete
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      serviceAccountName: twistlock-updater-service
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+    {{- if .Values.job.image_pull_secret }}
+      imagePullSecrets:
+      - name: {{ .Values.job.image_pull_secret }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.job.image_name }}
+        name: twistlock-updater-delete
+        command: ["python"]
+        args: ["deleteJob.py"]
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 10001
+          capabilities:
+            drop:
+            - ALL
+        imagePullPolicy: {{ .Values.job.image_pull_policy }}
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+{{- end }}

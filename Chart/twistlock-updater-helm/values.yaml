@@ -22,6 +22,7 @@ job:
   annotations:                  # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   start_now: false              # Starts a Job to perform the defender installation process
   start_ttl:                    # Seconds that the start Job will be kept. If set to 0 will delete after the Job succeded or failed
+  delete_all: false             # Delete all created resources by any the job if 'helm uninstall' command is executed 
   successful_cronjobs: 3        # Amount of successfull CronJobs to be kept. If set to 0, none successfull CronJobs will be kept.
   failed_cronjobs: 1            # Amount of failed CronJobs to be kept. If set to 0, none failed CronJobs will be kept.
 
