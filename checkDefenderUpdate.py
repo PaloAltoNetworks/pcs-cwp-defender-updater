@@ -1,3 +1,4 @@
+#!/bin/ash
 import os
 import requests
 import sys

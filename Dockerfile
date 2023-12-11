@@ -1,4 +1,4 @@
-FROM python:3.12.0-alpine3.18
+FROM --platform=linux/amd64 python:3.12.0-alpine3.18
   # checkov:skip=BC_VUL_1: Not using --extra-index-url in the pip install process
 WORKDIR /app
 
@@ -21,6 +21,7 @@ RUN apk -v cache clean
 RUN apk --purge del apk-tools
 
 COPY checkDefenderUpdate.py .
+COPY deleteJob.py .
 
 USER python
 
