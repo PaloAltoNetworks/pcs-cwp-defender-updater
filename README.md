@@ -66,7 +66,28 @@ Once done install the helm chart using the following command:
 $ helm upgrade --install -n twistlock -f values.yaml --create-namespace twistlock-updater https://raw.githubusercontent.com/PaloAltoNetworks/pcs-cwp-defender-updater/main/Chart/twistlock-updater-helm.tar.gz
 ```
 
+If you want to run the job to execute the defender auto-updater when executing a ```helm install``` or a ```helm upgrade```, set the value *job.start_now* to *true* as follows:
+
+```yaml
+job:
+  start_now: true
+```
+
+If you want to delete all the created resources by the job when executing a ```helm uninstall```, set the value *job.delete_all* to *true* as follows:
+
+```yaml
+job:
+  delete_all: true
+```
+
+In case if the ```helm uninstall``` fails, run the next commands to delete chart:
+```bash
+$ helm uninstall twistlock-updater -n twistlock --no-hooks
+$ kubectl delete job twistlock-updater-delete -n twistlock
+```
+
 For more parameters that the *values.yaml* file can support, please refer on this repository to the file *Chart/twistlock-updater-helm/values.yaml*.
+
 
 #### Kubectl Method
 As reference you could use the file *twistlock-updater.yaml* found on this repository. Just substitute the values of the variables **PRISMA_USERNAME**, **PRISMA_PASSWORD**, **DOCKER_CONFIG**, **IMAGE_NAME** and **COMPUTE_API_ENDPOINT** found on this file, adjust as needed (like removing the ConfigMap **daemonset-extra-config** from the document and it's mounted volume in the CronJob manifest) and apply such a file.
