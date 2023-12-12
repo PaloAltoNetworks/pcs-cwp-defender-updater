@@ -16,6 +16,7 @@ Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a 
 ### 1. Build Image
 First you need to create your own Docker image. For that you'll need to download the following files:
 
+* deleteJob.py
 * checkDefenderUpdate.py
 * requirements.txt
 * Dockerfile
