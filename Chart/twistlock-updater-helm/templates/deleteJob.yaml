@@ -26,7 +26,9 @@ spec:
     spec:
       serviceAccountName: twistlock-updater-service
       securityContext:
+      {{- if eq .Values.defender.orchestrator "kubernetes" }}
         fsGroup: 10001
+      {{- end }}
         seccompProfile:
           type: RuntimeDefault
     {{- if .Values.job.image_pull_secret }}
@@ -44,7 +46,10 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        {{- if eq .Values.defender.orchestrator "kubernetes" }}
           runAsUser: 10001
+        {{- end }}
           capabilities:
             drop:
             - ALL
