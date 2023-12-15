@@ -56,6 +56,7 @@ CLUSTER_ROLEBINDING = os.getenv("CLUSTER_ROLEBINDING", "twistlock-view-binding")
 DAEMONSET_SECRET = os.getenv("DAEMONSET_SECRET", "twistlock-secrets")
 DAEMONSET_SERVICEACCOUNT = os.getenv("DAEMONSET_SERVICEACCOUNT", "twistlock-service")
 DAEMONSET_SERVICE = os.getenv("DAEMONSET_SERVICE", "defender")
+OPENSHIFT_SCC = os.getenv("OPENSHIFT_SCC", "twistlock-scc")
 
 #Application parameters
 VERSION_REGEX = os.getenv("VERSION_REGEX", "[0-9]{2}_[0-9]{2}_[0-9]{3}")
@@ -125,18 +126,29 @@ def getConsoleInfo(api_endpoint, headers, verify=True):
     sys.exit(5)
 
 
-def deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api):
+def deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api):
     deleteK8SResource(rbac_v1_api.delete_cluster_role, CLUSTER_ROLE, "ClusterRole")
     deleteK8SResource(rbac_v1_api.delete_cluster_role_binding, CLUSTER_ROLEBINDING, "ClusterRoleBinding")
     deleteK8SResource(apps_v1_api.delete_namespaced_daemon_set, DAEMONSET_NAME, "DaemonSet", NAMESPACE)
     deleteK8SResource(core_v1_api.delete_namespaced_secret, DAEMONSET_SECRET, "Secret", NAMESPACE)
     deleteK8SResource(core_v1_api.delete_namespaced_service_account, DAEMONSET_SERVICEACCOUNT, "ServiceAccount", NAMESPACE)
     deleteK8SResource(core_v1_api.delete_namespaced_service, DAEMONSET_SERVICE, "Service", NAMESPACE)
+    if ORCHESTRATOR == "openshift":
+        deleteK8SResource(custom_api.delete_cluster_custom_object, OPENSHIFT_SCC, "SecurityContextConstraints")
 
 
 def deleteK8SResource(delete_function, resource_name, kind="", namespace=""):
     try:
-        if namespace:
+        if kind == "SecurityContextConstraints":
+            if DEBUG: print(f"{datetime.now()} Deleting {kind} resource named {resource_name}")
+            delete_function(
+                group="security.openshift.io", 
+                version="v1", 
+                plural="securitycontextconstraints",
+                name=resource_name
+            )
+
+        elif namespace:
             if DEBUG: print(f"{datetime.now()} Deleting {kind} resource named {resource_name} in namespace {namespace}.")
             delete_function(resource_name, namespace)
             
@@ -150,8 +162,16 @@ def deleteK8SResource(delete_function, resource_name, kind="", namespace=""):
 
 def createK8SResource(create_function, body, namespace=""):
     try:
-        
-        if namespace:
+        if body['kind'] == "SecurityContextConstraints":
+            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']}")
+            create_function(
+                group="security.openshift.io", 
+                version="v1", 
+                plural="securitycontextconstraints",
+                body=body
+            )
+
+        elif namespace:
             if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']} in namespace {namespace}")
             create_function(namespace, body)
 
@@ -164,7 +184,7 @@ def createK8SResource(create_function, body, namespace=""):
         print(f"{datetime.now()} Error: {error}")
 
 
-def applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, yaml_file):
+def applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, yaml_file):
     with open(yaml_file, 'r') as manifest:
         resources = yaml.safe_load_all(manifest)
     
@@ -178,6 +198,7 @@ def applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, yaml_file):
                     elif kind == "ServiceAccount": createK8SResource(core_v1_api.create_namespaced_service_account, resource, NAMESPACE)
                     elif kind == "DaemonSet": createK8SResource(apps_v1_api.create_namespaced_daemon_set, resource, NAMESPACE)
                     elif kind == "Service": createK8SResource(core_v1_api.create_namespaced_service, resource, NAMESPACE)
+                    elif kind == "SecurityContextConstraints": createK8SResource(custom_api.create_cluster_custom_object, resource)
 
 
 def defenderStatusOk(console_name, node_name, api_endpoint, headers, verify=True):
@@ -195,7 +216,7 @@ def defenderStatusOk(console_name, node_name, api_endpoint, headers, verify=True
     return False
 
 
-def applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, defender_config, api_endpoint, headers, verify=True):
+def applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, defender_config, api_endpoint, headers, verify=True):
     response = requests.post(f"{api_endpoint}/api/v1/defenders/daemonset.yaml", json=defender_config, headers=headers, verify=verify)
 
     if response.status_code == 200:
@@ -206,8 +227,8 @@ def applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, defender_config, api_e
             daemonset_manifest.write(response.text)
             daemonset_manifest.close()
         
-        deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api)
-        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, NEW_DEAMONSET_FILE)
+        deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
+        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, NEW_DEAMONSET_FILE)
 
     else:
         print(f"{datetime.now()} Error while downloading Defender. Error: {response.json()['err']}")
@@ -246,6 +267,7 @@ def main():
     core_v1_api = client.CoreV1Api()
     apps_v1_api = client.AppsV1Api()
     rbac_v1_api = client.RbacAuthorizationV1Api()
+    custom_api = client.CustomObjectsApi()
 
     checkConnectivity(COMPUTE_API_ENDPOINT, not SKIP_VERIFY)
     token = getToken(PRISMA_USERNAME, PRISMA_PASSWORD, COMPUTE_API_ENDPOINT, not SKIP_VERIFY)
@@ -308,13 +330,12 @@ def main():
     elif os.path.exists(INIT_DEAMONSET_FILE):
         os.popen(f"cp {INIT_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
 
-    if DEBUG:
-        print(f"New defender configuration:\n{new_defender_config}")
+    if DEBUG: print(f"New defender configuration:\n{new_defender_config}")
 
     print(f"{datetime.now()} Installing defender version {console_version}")
 
 
-    applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, new_defender_config, COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
+    applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, new_defender_config, COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
 
     # Checking defender Status for possible rollback
     node_name = core_v1_api.list_node().items[0].metadata.name
@@ -346,8 +367,8 @@ def main():
                     print(f"Previous defender configuration:\n{config_file.read()}")
                     config_file.close()
 
-            deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api)
-            applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, DEAMONSET_FILE)
+            deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
+            applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
         else:
             print(f"{datetime.now()} Defender in incorrect status. Cannot rollback due to theres no previous version")
         

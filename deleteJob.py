@@ -7,8 +7,9 @@ def main():
     core_v1_api = client.CoreV1Api()
     apps_v1_api = client.AppsV1Api()
     rbac_v1_api = client.RbacAuthorizationV1Api()
+    custom_api = client.CustomObjectsApi()
 
-    deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api)
+    deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
 
 if __name__ == "__main__":
     main()
