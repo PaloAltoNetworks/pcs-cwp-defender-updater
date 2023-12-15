@@ -20,6 +20,10 @@ spec:
   template:
     metadata:
       name: twistlock-updater-delete
+      {{- if .Values.defender.gke_autopilot }}
+      annotations:
+        autopilot.gke.io/no-connect: "true"
+      {{- end }}
       labels:
         app: twistlock-updater-delete
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -34,6 +38,12 @@ spec:
     {{- if .Values.job.image_pull_secret }}
       imagePullSecrets:
       - name: {{ .Values.job.image_pull_secret }}
+    {{- end }}
+    {{- if .Values.job.node_selector }}
+      {{- range $key, $val := .Values.job.node_selector }}
+      nodeSelector:
+        {{ $key }}: {{ $val }}
+      {{- end}}
     {{- end }}
       containers:
       - image: {{ .Values.job.image_name }}

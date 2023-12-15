@@ -12,3 +12,6 @@ spec:
   {{- if .Values.job.storage.class_name }}
   storageClassName: {{ .Values.job.storage.class_name }}
   {{- end }}
+  {{- if .Values.job.storage.volume_name }}
+  volumeName: {{ .Values.job.storage.volume_name }}
+  {{- end }}
