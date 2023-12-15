@@ -17,6 +17,7 @@ job:
     access_mode: ReadWriteOnce  # Storage access mode for CronJob Persistant Volume
     size: 1Gi                   # Storage size for CronJob Persistant Volume
     class_name:                 # Storage class for CronJob Persistant Volume. If not set, it will use the default Storage Class
+    volume_name:                # Name of the volume used. Used when a needs to reuse a existing PV
   debug: false                  # Print extended output of the CronJob
   init_configmap:               # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
   annotations:                  # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -25,6 +26,8 @@ job:
   delete_all: false             # Delete all created resources by any the job if 'helm uninstall' command is executed 
   successful_cronjobs: 3        # Amount of successfull CronJobs to be kept. If set to 0, none successfull CronJobs will be kept.
   failed_cronjobs: 1            # Amount of failed CronJobs to be kept. If set to 0, none failed CronJobs will be kept.
+  node_selector:                # Node Selector for executed Jobs
+#    key: value
 
 defender:
   console_name: ""              # Name of the console to be connected to. Not needed for SaaS version. For self-hosted, if not set, it will take the first SAN Name that appears under Manage > Defenders > Names
