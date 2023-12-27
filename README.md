@@ -1,9 +1,9 @@
 # Prisma Cloud DeamonSet Defender Auto Updater (Beta)
-Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a kubernetes cluster.
+Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a Kubernetes cluster or OpenShift cluster.
 
 ## Requirements
 1. Prisma Cloud Enterprise or self-hosted version
-2. Kubernetes Cluster on a public or private cloud (EKS + Fargate not supported)
+2. Kubernetes or OpenShift Cluster on a public or private cloud (EKS + Fargate not supported)
 3. Access to Kubernetes cluster on current workstation via kubectl or helm
 4. Kubernetes storage class (Public cloud providers regularly does have this)
 5. Docker Image Registry
@@ -65,6 +65,14 @@ Once done install the helm chart using the following command:
 
 ```bash
 $ helm upgrade --install -n twistlock -f values.yaml --create-namespace twistlock-updater https://raw.githubusercontent.com/PaloAltoNetworks/pcs-cwp-defender-updater/main/Chart/twistlock-updater-helm.tar.gz
+```
+
+For OpenShift cluster please add the following values:
+```yaml
+defender:
+  orchestrator: openshift
+  container_runtime: crio
+  selinux: true
 ```
 
 If you want to run the job to execute the defender auto-updater when executing a ```helm install``` or a ```helm upgrade```, set the value *job.start_now* to *true* as follows:
