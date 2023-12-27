@@ -138,7 +138,7 @@ spec:
         {{- end}}
         {{- if .Values.job.init_configmap }} 
         - mountPath: /app/init
-          name: daemonset-init-config
+          name: {{ .Values.job.init_configmap }}
         {{- end}}
         resources:
           limits:
@@ -162,12 +162,12 @@ spec:
             path: daemonset.extraconfig.yaml
       {{- end }}
       {{- if .Values.job.init_configmap }}
-      - name: daemonset-init-config
+      - name: {{ .Values.job.init_configmap }}
         configMap:
-          name: daemonset-init-config
+          name: {{ .Values.job.init_configmap }}
           items:
-          - key: daemonset.init.yaml
-            path: daemonset.init.yaml
+          - key: daemonset.yaml
+            path: daemonset.yaml
       {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Never
