@@ -64,7 +64,7 @@ Substitute the variables for current values.
 Once done install the helm chart using the following command:
 
 ```bash
-$ helm upgrade --install -n twistlock -f values.yaml --create-namespace twistlock-updater https://raw.githubusercontent.com/PaloAltoNetworks/pcs-cwp-defender-updater/main/Chart/twistlock-updater-helm.tar.gz
+$ helm upgrade --install -n twistlock -f values.yaml --create-namespace --repo https://paloaltonetworks.github.io/pcs-cwp-defender-updater twistlock-updater twistlock-updater
 ```
 
 For OpenShift cluster please add the following values:
