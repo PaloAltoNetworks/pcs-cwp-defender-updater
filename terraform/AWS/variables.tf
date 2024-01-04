@@ -9,6 +9,12 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "namespace" {
+  description = "Prisma Cloud Defender namespace"
+  type        = string
+  default = "twistlock"
+}
+
 variable "compute_api_endpoint" {
   description = "Prisma Cloud Compute API Endpoint"
   type        = string
