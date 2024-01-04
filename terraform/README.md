@@ -9,7 +9,7 @@ Also create the environment variables of **AWS_ACCESS_KEY_ID** and **AWS_SECRET_
 Commands:
 ```bash
 terraform init
-terraform verify
+terraform validate
 terraform plan
 terraform apply --auto-approve
 ```
