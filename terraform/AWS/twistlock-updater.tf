@@ -18,7 +18,7 @@ resource "helm_release" "twistlock-updater" {
 
   repository       = "https://paloaltonetworks.github.io/pcs-cwp-defender-updater"
   chart            = "twistlock-updater"
-  namespace        = "twistlock"
+  namespace        = var.namespace
   create_namespace = true
   version          = "1.0.0"
   wait             = false
