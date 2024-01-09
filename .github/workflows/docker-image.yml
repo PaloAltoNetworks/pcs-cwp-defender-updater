@@ -26,6 +26,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: twistlock-updater:latest,twistlock-updater:$RELEASE_VERSION
+          tags: twistlock-updater:latest,twistlock-updater:${{ env.RELEASE_VERSION }}
           cache-from: type=registry,ref=twistlock-updater:latest
           cache-to: type=inline
