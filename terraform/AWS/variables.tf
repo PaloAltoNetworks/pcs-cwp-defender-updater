@@ -12,7 +12,7 @@ variable "cluster_name" {
 variable "namespace" {
   description = "Prisma Cloud Defender namespace"
   type        = string
-  default = "twistlock"
+  default     = "twistlock"
 }
 
 variable "compute_api_endpoint" {
@@ -30,14 +30,22 @@ variable "prisma_password" {
   type        = string
 }
 
+variable "job-cronjob_enabled" {
+  description = "Defender Auto Updater CronJob enablement"
+  type        = bool
+  default     = true
+}
+
 variable "job-schedule" {
   description = "Defender Auto Updater CronJob schedule"
   type        = string
+  default     = "0 0 * * Sun"
 }
 
 variable "job-timezone" {
   description = "Defender Auto Updater CronJob timezone"
   type        = string
+  default     = "Etc/UTC"
 }
 
 variable "job-image_name" {
@@ -55,17 +63,26 @@ variable "job-pull_secret_dockerconfigjson" {
   type        = string
 }
 
+variable "job-has_volume" {
+  description = "Defender Auto Updater job debug mode"
+  type        = bool
+  default     = true
+}
+
 variable "job-debug" {
   description = "Defender Auto Updater job debug mode"
   type        = bool
+  default     = false
 }
 
 variable "defender-collect_pod_labels" {
   description = "Enable defender collect pod labels"
   type        = bool
+  default     = true
 }
 
 variable "defender-monitor_service_accounts" {
   description = "Enable defender service accounts monitoring"
   type        = bool
+  default     = true
 }
