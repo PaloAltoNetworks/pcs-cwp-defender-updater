@@ -20,8 +20,13 @@ resource "helm_release" "twistlock-updater" {
   chart            = "twistlock-updater"
   namespace        = var.namespace
   create_namespace = true
-  version          = "1.0.0"
+  version          = "1.0.1"
   wait             = false
+
+  set {
+    name  = "always_run"
+    value = timestamp()
+  }
 
   set {
     name  = "compute.api_endpoint"
@@ -43,6 +48,10 @@ resource "helm_release" "twistlock-updater" {
     value = var.job-schedule
   }
 
+  set {
+    name  = "job.has_volume"
+    value = var.job-has_volume
+  }
 
   set {
     name  = "job.timezone"
@@ -77,6 +86,11 @@ resource "helm_release" "twistlock-updater" {
   set {
     name  = "defender.monitor_service_accounts"
     value = var.defender-monitor_service_accounts
+  }
+
+  set {
+    name  = "job.cronjob_enabled"
+    value = var.job-cronjob_enabled
   }
 
   depends_on = [

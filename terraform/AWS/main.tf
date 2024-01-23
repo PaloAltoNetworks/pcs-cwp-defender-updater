@@ -75,6 +75,7 @@ data "aws_iam_policy" "ebs_csi_policy" {
 
 # https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/latest/submodules/iam-assumable-role-with-oidc
 module "irsa-ebs-csi" {
+  count   = var.job-has_volume ? 1 : 0
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
   version = "4.7.0"
 
@@ -87,9 +88,10 @@ module "irsa-ebs-csi" {
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
 resource "aws_eks_addon" "ebs-csi" {
+  count                    = var.job-has_volume ? 1 : 0
   cluster_name             = module.eks.cluster_name
   addon_name               = "aws-ebs-csi-driver"
-  service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
+  service_account_role_arn = module.irsa-ebs-csi[count.index].iam_role_arn
   tags = {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
