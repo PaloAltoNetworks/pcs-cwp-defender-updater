@@ -6,6 +6,8 @@ compute:
   skip_verify: false              # Skip TLS verification
  
 job:
+  cronjob_enabled: true           # Enables CronJob execution. If not enabled, no persistant volume and cronJob will be created
+  has_volume: true                # Verifies if job has Persistant Volume. If set to false, then no Persistant Volume will be created.
   schedule: "0 0 * * Sun"         # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
   timezone: "Etc/UTC"             # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
   image_name:                     # *Name of the image to be used.

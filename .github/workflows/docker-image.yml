@@ -27,5 +27,5 @@ jobs:
           context: .
           push: true
           tags: ${{ vars.IMAGE_NAME }}:latest,${{ vars.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
-          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:latest
-          cache-to: type=inline
+#          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:latest
+#          cache-to: type=inline
