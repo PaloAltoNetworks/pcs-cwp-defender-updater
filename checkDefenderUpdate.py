@@ -69,6 +69,8 @@ NEW_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.new.yaml"
 OLD_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.old.yaml"
 INIT_DEAMONSET_FILE = f"{WORKDIR}/init/daemonset.yaml"
 DEAMONSET_EXTRACONFIG_FILE = f"{WORKDIR}/config/daemonset.extraconfig.yaml"
+HAS_VOLUME = os.getenv("HAS_VOLUME", "true").lower() in ["true", "1", "y"]
+START_NOW = os.getenv("START_NOW", "false").lower() in ["true", "1", "y"]
 DEBUG = os.getenv("DEBUG", "false").lower() in ["true", "1", "y"]
 
 def checkConnectivity(api_endpoint, verify=True):
@@ -316,6 +318,13 @@ def main():
         with open(DEAMONSET_EXTRACONFIG_FILE) as extra_config_file:
             extra_config = yaml.safe_load(extra_config_file)
             new_defender_config.update(extra_config)
+
+
+    if not HAS_VOLUME:
+        if not START_NOW:
+            if console_version == daemonset_version:
+                print(f"{datetime.now()} Console and Defender version match. Version {console_version}")
+                return 0
 
     if os.path.exists(DEAMONSET_FILE) and not configChanged(new_defender_config):
         if console_version == daemonset_version:
