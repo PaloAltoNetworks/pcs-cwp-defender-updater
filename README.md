@@ -66,7 +66,8 @@ Once done install the helm chart using the following command:
 ```bash
 $ helm upgrade --install -n twistlock -f values.yaml --create-namespace --repo https://paloaltonetworks.github.io/pcs-cwp-defender-updater twistlock-updater twistlock-updater
 ```
-
+**Use Cases**
+* **OpenShift**<br>
 For OpenShift cluster please add the following values:
 ```yaml
 defender:
@@ -74,21 +75,36 @@ defender:
   container_runtime: crio
   selinux: true
 ```
-
-If you want to run the job to execute the defender auto-updater when executing a ```helm install``` or a ```helm upgrade```, set the value *job.start_now* to *true* as follows:
-
-```yaml
-job:
-  start_now: true
-```
-
-If you want to delete all the created resources by the job when executing a ```helm uninstall```, set the value *job.delete_all* to *true* as follows:
+* **StartJob**<br>
+By default it creates a Job to install the defender when executing a `helm install` or `helm upgrade`. If you want to disable this behavior, set the value *job.start_now* to *false* as follows:
 
 ```yaml
 job:
-  delete_all: true
+  start_now: false
+```
+* **DeleteJob**<br>
+By default it creates a Job to uninstall the defender when executing a `helm uninstall`. If you want to disable this behavior, set the value *job.delete_all* to *false* as follows:
+
+```yaml
+job:
+  delete_all: false
+```
+* **Disable CronJob**<br>
+If you want to disable the CronJob creation, then set the value *job.cronjob_enabled* to *false* as follows:
+```yaml
+job:
+  cronjob_enabled: false
+```
+* **Remove Persistant Volume**<br>
+The Persistant Volume is used to store state information and rollback capabilities. This is being used by the CronJob and StartJob.<br></br>
+By removing the Persistant Volume, it won't have the capability to rollback to the previous version, the StartJob will execute the defender installation at the beginning, and the CronJob will be checking if any update in the console version. <br></br>
+To remove the Persistant Volume used for the CronJob and start Job, set the value *job.has_volume* to *false* as follows:
+```yaml
+job:
+  has_volume: false
 ```
 
+**Troubleshooting**<br>
 In case if the ```helm uninstall``` fails, run the next commands to delete chart:
 ```bash
 $ helm uninstall twistlock-updater -n twistlock --no-hooks
