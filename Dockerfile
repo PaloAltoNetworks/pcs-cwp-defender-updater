@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.12.0-alpine3.18
+FROM --platform=linux/amd64 python:alpine
   # checkov:skip=BC_VUL_1: Not using --extra-index-url in the pip install process
 WORKDIR /app
 
