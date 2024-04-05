@@ -17,18 +17,12 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build only
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: ${{ vars.IMAGE_NAME }}:latest,${{ vars.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
-      - name: Twistcli CI Scanning
+      - name: Build image and CI Scanning
         run: |
-          #Load docker image
-          docker use --load
-          
-          #Generate Console TOKEN
+          # Build docker image
+          docker build -t ${{ vars.IMAGE_NAME }}:latest .
+
+          #Generate Console token
           token=$(curl -s -k ${{ secrets.PCC_URL }}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
             "username":"${{ secrets.PCC_USER }}",
             "password":"${{ secrets.PCC_PASS }}"
