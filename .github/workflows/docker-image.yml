@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
@@ -21,11 +23,23 @@ jobs:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push
+      - name: Build only
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: false
           tags: ${{ vars.IMAGE_NAME }}:latest,${{ vars.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
-#          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:latest
-#          cache-to: type=inline
+      - name: Twistcli CI Scanning
+        run: |
+          #Generate Console TOKEN
+          token=$(curl -s -k ${{ secrets.PCC_URL }}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
+            "username":"'"${{ secrets.PCC_USER }}"'",
+            "password":"'"${{ secrets.PCC_PASS }}"'"
+            }'  | grep -Po '"'"token"'"\s*:\s*"\K([^"]*)')
+          
+          #Download Twistcli
+          curl -s -O ${{ secrets.PCC_URL }}/api/v1/util/twistcli -H "Authorization: Bearer $token"
+          chmod a+x twistcli
+
+          #Perform CI Scan
+          ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details ${{ vars.IMAGE_NAME }}:latest
