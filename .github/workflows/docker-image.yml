@@ -27,13 +27,14 @@ jobs:
         run: |
           #Generate Console TOKEN
           token=$(curl -s -k ${{ secrets.PCC_URL }}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
-            "username":"'"${{ secrets.PCC_USER }}"'",
-            "password":"'"${{ secrets.PCC_PASS }}"'"
+            "username":"${{ secrets.PCC_USER }}",
+            "password":"${{ secrets.PCC_PASS }}"
             }'  | grep -Po '"'"token"'"\s*:\s*"\K([^"]*)')
           
           #Download Twistcli
           curl -s -O ${{ secrets.PCC_URL }}/api/v1/util/twistcli -H "Authorization: Bearer $token"
           chmod a+x twistcli
+          ./twistcli --version
 
           #Perform CI Scan
           ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details ${{ vars.IMAGE_NAME }}:latest
