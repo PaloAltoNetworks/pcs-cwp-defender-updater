@@ -17,12 +17,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build only
         uses: docker/build-push-action@v5
         with:
@@ -43,3 +37,15 @@ jobs:
 
           #Perform CI Scan
           ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details ${{ vars.IMAGE_NAME }}:latest
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ vars.IMAGE_NAME }}:latest,${{ vars.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
