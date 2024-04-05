@@ -37,7 +37,7 @@ jobs:
           ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details ${{ vars.IMAGE_NAME }}:latest
 
           #Perform Analysis Sandbox 
-          ./twistcli sandbox --address ${{ secrets.PCC_URL }} --token $token --analysis-duration 2m ${{ vars.IMAGE_NAME }}:latest
+          sudo ./twistcli sandbox --address ${{ secrets.PCC_URL }} --token $token --analysis-duration 2m ${{ vars.IMAGE_NAME }}:latest
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
