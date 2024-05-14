@@ -9,7 +9,7 @@ Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a 
 5. Docker Image Registry
 
 > NOTE
-> * This process was tested on GCP Artifact Registry.
+> * This process was tested on GCP Artifact Registry and Azure Container Registry.
 > <br></br>
 
 ## Installation
