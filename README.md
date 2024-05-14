@@ -59,7 +59,17 @@ defender:
   collect_pod_labels: true
   monitor_service_accounts: true
 ```
-Substitute the variables for current values.
+Substitute the variables for current values. The values of *compute.username* and *compute.password* are in plain text and the value *job.pull_secret_dockerconfigjson* in encoded in base 64 which is use to authenticate with the image registry.
+
+Instead of using the value *job.pull_secret_dockerconfigjson* for authentication, you can use the following values:
+```yaml
+job:
+  registry:
+    name: REGISTRY
+    username: REGISTRY_USERNAME
+    password: REGISTRY_PASSWORD
+```
+All these values in plain text.
 
 Once done install the helm chart using the following command:
 
