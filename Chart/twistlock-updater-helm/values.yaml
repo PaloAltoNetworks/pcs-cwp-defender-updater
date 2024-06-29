@@ -42,7 +42,8 @@ defender:
   container_runtime: containerd   # Name of container runtime to be used. Can be only the following values: docker, containerd or crio.
   collect_pod_labels: false       # Allow collection of labels on pods
   monitor_service_accounts: false # Allow service account monitoring
-  cluster_name: ""                # Overrides the name of the cluster to be used. By default, the defender detects the cluster name
+  cluster_name_resolving_method: default # Is the method used to resolve the cluster name, could be default, manual or api-server.
+  cluster_name: ""                # Overrides the name of the cluster to be used. By default, the defender detects the cluster name. It is required if the cluster_name_resolving_method is set to manual
   runtime_socket_path: ""         # Container runtime socket path
   node_selector: ''               # Specify on which nodes will the deamonset apply to. Format: 'key: "value"'
   role_arn: ""                    # AWS role ARN for DaemonSet defender 
