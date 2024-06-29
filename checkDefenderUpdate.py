@@ -5,6 +5,7 @@ import sys
 import re
 import yaml
 import json
+import shutil
 
 from datetime import datetime
 from kubernetes import client, config
@@ -27,6 +28,7 @@ ORCHESTRATOR = os.getenv("ORCHESTRATOR", "kubernetes")
 CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "containerd")
 COLLECT_POD_LABELS = os.getenv("COLLECT_POD_LABELS", "false").lower() in ["true", "1", "y"]
 MONITOR_SERVICEACCOUNTS = os.getenv("MONITOR_SERVICEACCOUNTS", "false").lower() in ["true", "1", "y"]
+CLUSTER_NAME_RESOLVING_METHOD = os.getenv("CLUSTER_NAME_RESOLVING_METHOD", "")
 CLUSTER_NAME = os.getenv("CLUSTER_NAME", "")
 RUNTIME_SOCKET_PATH = os.getenv("RUNTIME_SOCKET_PATH", "")
 NODE_SELECTOR = os.getenv("NODE_SELECTOR", '')
@@ -288,6 +290,7 @@ def main():
         "version": console_version,
         "annotations": ANNOTATIONS,
         "bottlerocket": BOTTLEROCKET,
+        "clusterNameResolvingMethod": CLUSTER_NAME_RESOLVING_METHOD,
         "cluster": CLUSTER_NAME,
         "collectPodLabels": COLLECT_POD_LABELS,
         "consoleAddr": console_name,
@@ -337,7 +340,7 @@ def main():
             print(f"{datetime.now()} Console and Defender version doesn't match. Console version: {console_version}; Defender version: {daemonset_version}")
     
     elif os.path.exists(INIT_DEAMONSET_FILE):
-        os.popen(f"cp {INIT_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
+        shutil.copyfile(INIT_DEAMONSET_FILE, DEAMONSET_FILE)
 
     if DEBUG: print(f"New defender configuration:\n{new_defender_config}")
 
@@ -364,9 +367,9 @@ def main():
             config_file.write(json.dumps(new_defender_config))
 
         if os.path.exists(DEAMONSET_FILE):
-            os.popen(f"mv {DEAMONSET_FILE} {OLD_DEAMONSET_FILE}").read()
+            os.rename(DEAMONSET_FILE, OLD_DEAMONSET_FILE)
 
-        os.popen(f"mv {NEW_DEAMONSET_FILE} {DEAMONSET_FILE}").read()
+        os.rename(NEW_DEAMONSET_FILE, DEAMONSET_FILE)
 
     else:
         if os.path.exists(DEAMONSET_FILE):
@@ -381,7 +384,7 @@ def main():
         else:
             print(f"{datetime.now()} Defender in incorrect status. Cannot rollback due to theres no previous version")
         
-    os.popen(f"rm -f {NEW_DEAMONSET_FILE}")
+    os.remove(NEW_DEAMONSET_FILE)
     
 
 if __name__ == "__main__":
