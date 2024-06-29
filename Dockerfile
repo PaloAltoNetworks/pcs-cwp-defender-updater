@@ -19,6 +19,7 @@ RUN rm -rf /root/.cache/pip
 RUN apk update && apk upgrade
 RUN apk -v cache clean
 RUN apk --purge del apk-tools
+RUN rm -f /bin/sh
 
 COPY checkDefenderUpdate.py .
 COPY deleteJob.py .
