@@ -382,10 +382,8 @@ def main():
             deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
             applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
         else:
-            print(f"{datetime.now()} Defender in incorrect status. Cannot rollback due to theres no previous version")
-        
-    os.remove(NEW_DEAMONSET_FILE)
-    
+            print(f"{datetime.now()} Defender in incorrect status. Cannot rollback due to theres no previous version")  
+
 
 if __name__ == "__main__":
     main()
