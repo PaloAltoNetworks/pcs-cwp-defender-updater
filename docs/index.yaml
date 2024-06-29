@@ -12,9 +12,25 @@ entries:
     - apiVersion: v1
       created: 2024-01-23T08:50:00.499029981-06:00
       description: Deploy Twistlock Defender Auto Updater version 1.0.1
-      digest: 345929a2499d86629ee6bcd31cf9783f50ce4bbc7617d4823b4ef0fdee77b9f9
+      digest: 43b4a8024368a25483088af2bc344ef70c60f6b1021b9116b4f947888159a0f7
       name: twistlock-updater
       urls:
       - twistlock-updater-1.0.1.tgz
       version: 1.0.1
+    - apiVersion: v1
+      created: 2024-01-23T08:50:00.499029981-06:00
+      description: Deploy Twistlock Defender Auto Updater version 1.0.2
+      digest: bd31782f7838064dac14fd63895358da7590f34326d165212e4c43d79ba00ac1
+      name: twistlock-updater
+      urls:
+      - twistlock-updater-1.0.2.tgz
+      version: 1.0.2
+    - apiVersion: v1
+      created: 2024-01-23T08:50:00.499029981-06:00
+      description: Deploy Twistlock Defender Auto Updater version 1.0.3
+      digest: 8cd9198ac951a45e192d2a3b5e2810e6da40bc0e4afa0318c84f092d53357b23
+      name: twistlock-updater
+      urls:
+      - twistlock-updater-1.0.3.tgz
+      version: 1.0.3
 generated: 2024-01-02T09:53:50.499029981-06:00
