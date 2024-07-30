@@ -2,6 +2,8 @@ FROM --platform=linux/amd64 python:alpine
   # checkov:skip=BC_VUL_1: Not using --extra-index-url in the pip install process
 WORKDIR /app
 
+LABEL TESTING="Value1"
+
 ENV PYTHONUNBUFFERED=1
 
 RUN mkdir twistlock
@@ -13,6 +15,7 @@ RUN chown -R python:python /app
 COPY requirements.txt requirements.txt
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
+
 
 RUN pip uninstall -y pip
 RUN rm -rf /root/.cache/pip
