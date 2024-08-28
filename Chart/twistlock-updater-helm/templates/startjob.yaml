@@ -53,7 +53,10 @@ spec:
         name: twistlock-updater-start
         env:
         - name: COMPUTE_API_ENDPOINT
-          value: {{ .Values.compute.api_endpoint | quote  }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.compute.secret }}
+              key: compute_api_endpoint
         - name: PRISMA_USERNAME
           valueFrom:
             secretKeyRef:
