@@ -3,6 +3,11 @@ compute:
   username:                       # Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
   password:                       # Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
   secret:  compute-secret         # Name of the Secret to be used
+  secret_store:                   # Integrate with External Secrets Operator 
+    name:                         # Name of the Secrets Store where the Access to Prisma is located
+    kind: ClusterSecretStore      # Secrets Store kind
+    refresh_interval: 1h          # Secrets refresh interval
+    remote_key:                   # Remote secret name
   skip_verify: false              # Skip TLS verification
  
 job:
@@ -18,6 +23,11 @@ job:
     username:                     # Username used for authentication.
     password:                     # Password used for authentication.
   pull_secret_dockerconfigjson:   # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created or registry values are set. 
+  secret_store:                   # Integrate with External Secrets Operator
+    name:                         # Name of the Secrets Store
+    kind: ClusterSecretStore      # Secrets Store kind
+    refresh_interval: 1h          # Secrets refresh interval
+    remote_key:                   # Remote secret name
   role_arn:                       # AWS role ARN for CronJob
   storage:                        # Storage settings for PersistantVolumeClaim. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
     access_mode: ReadWriteOnce    # Storage access mode for CronJob Persistant Volume
