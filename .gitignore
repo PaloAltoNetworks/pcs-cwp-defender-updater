@@ -159,6 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 backup/
+<<<<<<< HEAD
 
 # Ignore values files from the repo
 values*.yaml
@@ -171,3 +172,6 @@ terraform.tfstate
 terraform.tfstate.backup
 *module*
 *.tfvars
+=======
+values.yaml
+>>>>>>> 24a9af8 (Removed values)

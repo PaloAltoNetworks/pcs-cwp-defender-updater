@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:alpine
+FROM --platform=linux/amd64 python:3.12-alpine
 
 WORKDIR /app
 

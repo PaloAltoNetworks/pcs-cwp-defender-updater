@@ -12,17 +12,17 @@ compute:
  
 job:
   cronjob_enabled: true           # Enables CronJob execution. If not enabled, no persistant volume and cronJob will be created
-  has_volume: true                # Verifies if job has Persistant Volume. If set to false, then no Persistant Volume will be created.
+  has_volume: false               # Verifies if job has Persistant Volume. If set to false, then no Persistant Volume will be created.
   schedule: "0 0 * * Sun"         # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
   timezone: "Etc/UTC"             # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
   image_name:                     # *Name of the image to be used. Must be full path ej REGISTRY_NAME/IMAGE_NAME:IMAGE_TAG
   image_pull_policy: Always       # Pull policy of the CronJob image.
-  image_pull_secret:              # Name of the secret needed to pull the CronJob image.
+  image_pull_secret: twistlock-updater-pull-secret # Name of the secret needed to pull the CronJob image.
   registry:                       # Variables used to authenticate with external registry to pull the CronJob image. Not needed if the secret has already been created                  
     name:                         # Name of the registry
     username:                     # Username used for authentication.
     password:                     # Password used for authentication.
-  pull_secret_dockerconfigjson:   # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created or registry values are set. 
+    dockerconfigjson:             # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created or registry values are set. 
   secret_store:                   # Integrate with External Secrets Operator
     name:                         # Name of the Secrets Store
     kind: ClusterSecretStore      # Secrets Store kind
