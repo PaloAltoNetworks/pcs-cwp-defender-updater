@@ -64,23 +64,77 @@ job:
   schedule: "0 0 * * Sun"
   timezone: "America/Los_Angeles"
   image_name: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-  image_pull_secret: twistlock-updater-pull-secret
-  pull_secret_dockerconfigjson: ${DOCKER_CONFIG}
+  registry:
+    name: ${REGISTRY}
+    username: ${REGISTRY_USERNAME}
+    password: ${REGISTRY_PASSWORD}
 
 defender:
   collect_pod_labels: true
   monitor_service_accounts: true
 ```
-Substitute the variables for current values. The values of *compute.username* and *compute.password* are in plain text and the value *job.pull_secret_dockerconfigjson* in encoded in base 64 which is use to authenticate with the image registry to pull the updater image, but it is not required if there's an existing secret. 
+Substitute the variables for current values. The values of *compute.username* and *compute.password* are in plain text and are the Access Key and Secret Key of the Service Account created. The values of *job.registry.name*, *job.registry.username* and *job.registry.password* are required to download the Defender Updater image from the private repository.
 
-Instead of using the value *job.pull_secret_dockerconfigjson* for authentication, you can use the following values:
-```yaml
-job:
-  registry:
-    name: REGISTRY
-    username: REGISTRY_USERNAME
-    password: REGISTRY_PASSWORD
+#### External Secrets Operator
+If you want to use [External Secrets Operator](https://external-secrets.io/latest/) to handle your secrets, then do the following:
+
+1. Install External Secrets Operatorm by executing the following commands:
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace
 ```
+
+2. Follow up the corresponding [guide](https://external-secrets.io/latest/provider/aws-secrets-manager/) for installing a SecretStore or ClusterSecretStore so the External Secrets Operator can retrieve the secrets. This Chart uses by default **ClusterSecretStore** since there's no attachment to the namespace where the defender is being deployed. To change it to SecretStore, set the following values in your values.yaml file:
+```yaml
+compute:
+  secret_store:                                 
+    kind: SecretStore
+
+job:
+  secret_store:
+    kind: SecretStore
+```
+
+3. Create the Secret with the following JSON format:
+```json
+{
+    "COMPUTE_API_ENDPOINT":"compute.api_endpoint",
+    "PRISMA_USERNAME":"compute.username",
+    "PRISMA_PASSWORD":"compute.password",
+    "REGISTRY":"job.registry.name",
+    "REGISTRY_USER":"job.registry.user",
+    "REGISTRY_PASS":"job.registry.password"
+}
+```
+You **must** substitute the values by the ones corresponding to your defender updater deployment. 
+
+For Azure Key vault, you require to set the **content type** to **application/json**.
+
+4. Create the values file as the following:
+```yaml
+compute:
+  secret_store:
+    name: ${SECRETSTORE_NAME}
+    remote_key: ${SECRET_NAME}
+ 
+job:
+  schedule: "0 0 * * Sun"
+  timezone: "America/Los_Angeles"
+  image_name: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+  secret_store:
+    name: ${SECRETSTORE_NAME}
+    remote_key: ${SECRET_NAME}
+
+defender:
+  collect_pod_labels: true
+  monitor_service_accounts: true
+```
+
+Substitute the following values:
+- **compute.secret_store.name**: Name of the SecretStore created to store the Prisma Cloud Service Account credentials. Can be the same as *job.secret_store.name*
+- **compute.secret_store.remote_key**: Name of the secret created to store the Prisma Cloud Service Account credentials. Can be the same as *job.secret_store.remote_key*
+- **job.secret_store.name**: Name of the SecretStore created to store the credentials to download the updater image. Can be the same as *compute.secret_store.name*
+- **job.secret_store.remote_key** Name of the secret created to store the credentials to download the updater image. Can be the same as *compute.secret_store.remote_key*
 
 **Use Cases**
 * **OpenShift**<br>
@@ -111,13 +165,15 @@ If you want to disable the CronJob creation, then set the value *job.cronjob_ena
 job:
   cronjob_enabled: false
 ```
-* **Remove Persistant Volume**<br>
-The Persistant Volume is used to store state information and rollback capabilities. This is being used by the CronJob and StartJob.<br></br>
-By removing the Persistant Volume, it won't have the capability to rollback to the previous version, the StartJob will execute the defender installation at the beginning, and the CronJob will be checking if any update in the console version. <br></br>
-To remove the Persistant Volume used for the CronJob and start Job, set the value *job.has_volume* to *false* as follows:
+
+* **Add Persistant Volume**<br>
+A Persistant Volume can be used to store state information and rollback capabilities. This is being used by the CronJob and StartJob.<br></br>
+By adding the Persistant Volume, it will have the capability to rollback to the previous version. Without this the Start Job will install the defender anyways and the CronJob will verify only if the existing installed Defender version matches with the Compute Console version. 
+
+To add the Persistant Volume used for the CronJob and start Job, set the value *job.has_volume* to *true* as follows:
 ```yaml
 job:
-  has_volume: false
+  has_volume: true
 ```
 
 ### 3. Install CronJob

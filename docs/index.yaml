@@ -1,44 +1,52 @@
 apiVersion: v1
 entries:
   twistlock-updater:
-    - apiVersion: v1
-      created: 2024-01-02T09:53:50.499029981-06:00
-      description: Deploy Twistlock Defender Auto Updater version 1.0.0 
-      digest: 345929a2499d86629ee6bcd31cf9783f50ce4bbc7617d4823b4ef0fdee77b9f9
-      name: twistlock-updater
-      urls:
-      - twistlock-updater-1.0.0.tgz
-      version: 1.0.0
-    - apiVersion: v1
-      created: 2024-01-23T08:50:00.499029981-06:00
-      description: Deploy Twistlock Defender Auto Updater version 1.0.1
-      digest: 43b4a8024368a25483088af2bc344ef70c60f6b1021b9116b4f947888159a0f7
-      name: twistlock-updater
-      urls:
-      - twistlock-updater-1.0.1.tgz
-      version: 1.0.1
-    - apiVersion: v1
-      created: 2024-01-23T08:50:00.499029981-06:00
-      description: Deploy Twistlock Defender Auto Updater version 1.0.2
-      digest: bd31782f7838064dac14fd63895358da7590f34326d165212e4c43d79ba00ac1
-      name: twistlock-updater
-      urls:
-      - twistlock-updater-1.0.2.tgz
-      version: 1.0.2
-    - apiVersion: v1
-      created: 2024-01-23T08:50:00.499029981-06:00
-      description: Deploy Twistlock Defender Auto Updater version 1.0.3
-      digest: 8cd9198ac951a45e192d2a3b5e2810e6da40bc0e4afa0318c84f092d53357b23
-      name: twistlock-updater
-      urls:
-      - twistlock-updater-1.0.3.tgz
-      version: 1.0.3
-    - apiVersion: v1
-      created: 2024-01-23T08:50:00.499029981-06:00
-      description: Deploy Twistlock Defender Auto Updater version 1.0.4
-      digest: a7a9301a44d7dd6c0b7f11c857fddde73118c723b17c47961bab797e5aad8b67
-      name: twistlock-updater
-      urls:
-      - twistlock-updater-1.0.4.tgz
-      version: 1.0.4
-generated: 2024-01-02T09:53:50.499029981-06:00
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.4101524-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: a50d8cb67fd78932f5eebd3c42c5ddcee293258b2995fa8031fa63630c19b474
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.5.tgz
+    version: 1.0.5
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.4096337-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: a7a9301a44d7dd6c0b7f11c857fddde73118c723b17c47961bab797e5aad8b67
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.4.tgz
+    version: 1.0.4
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.4074923-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: 8cd9198ac951a45e192d2a3b5e2810e6da40bc0e4afa0318c84f092d53357b23
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.3.tgz
+    version: 1.0.3
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.4040442-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: bd31782f7838064dac14fd63895358da7590f34326d165212e4c43d79ba00ac1
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.2.tgz
+    version: 1.0.2
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.3999626-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: 43b4a8024368a25483088af2bc344ef70c60f6b1021b9116b4f947888159a0f7
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v1
+    created: "2024-12-30T21:27:45.3959613-06:00"
+    description: Twistlock Defender Updater CronJob Helm Chart
+    digest: c5becd49420e357bdc0e2c9639b3906e4ab6c5398487d4b79c44d5d425f95e2d
+    name: twistlock-updater
+    urls:
+    - twistlock-updater-1.0.0.tgz
+    version: 1.0.0
+generated: "2024-12-30T21:27:45.3357559-06:00"
