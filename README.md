@@ -56,7 +56,7 @@ If using Helm as installation method (recommended) therefore create first create
 
 ```yaml
 compute:
-  api_endpoint: https://us-east1.cloud.twistlock.com/us-1-123456789
+  api_endpoint: ${COMPUTE_API_ENDPOINT}
   username: ${PRISMA_USERNAME}
   password: ${PRISMA_PASSWORD}
  
@@ -73,7 +73,16 @@ defender:
   collect_pod_labels: true
   monitor_service_accounts: true
 ```
-Substitute the variables for current values. The values of *compute.username* and *compute.password* are in plain text and are the Access Key and Secret Key of the Service Account created. The values of *job.registry.name*, *job.registry.username* and *job.registry.password* are required to download the Defender Updater image from the private repository.
+The values to substitute are:
+- **COMPUTE_API_ENDPOINT**: The endpoint of the Compute Console. Can be found in Prisma Cloud Compute console under Manage > System > Utilities > Path to the Console.
+- **PRISMA_USERNAME**: Access Key of the Service Account created in Prisma Cloud.
+- **PRISMA_PASSWORD**: Secret Key of the Service Account created in Prisma Cloud.
+- **REGISTRY**: Name of the registry where the Defender Updater image is located.
+- **IMAGE_NAME**: Name of the Defender Updater image.
+- **IMAGE_TAG**: Tag of Defender Updater the image.
+- **REGISTRY_USERNAME**: Name of the user used to access to the registry where the Defender Image is located.
+- **REGISTRY_PASSWORD**: Password of the user used to access to the registry where the Defender Image is located.
+
 
 #### External Secrets Operator
 If you want to use [External Secrets Operator](https://external-secrets.io/latest/) to handle your secrets, then do the following:
@@ -131,10 +140,11 @@ defender:
 ```
 
 Substitute the following values:
-- **compute.secret_store.name**: Name of the SecretStore created to store the Prisma Cloud Service Account credentials. Can be the same as *job.secret_store.name*
-- **compute.secret_store.remote_key**: Name of the secret created to store the Prisma Cloud Service Account credentials. Can be the same as *job.secret_store.remote_key*
-- **job.secret_store.name**: Name of the SecretStore created to store the credentials to download the updater image. Can be the same as *compute.secret_store.name*
-- **job.secret_store.remote_key** Name of the secret created to store the credentials to download the updater image. Can be the same as *compute.secret_store.remote_key*
+- **SECRETSTORE_NAME**: Name of the SecretStore object created previously.
+- **SECRET_NAME**: Name of the secret in the external source.
+- **REGISTRY**: Name of the registry where the Defender Updater image is located.
+- **IMAGE_NAME**: Name of the Defender Updater image.
+- **IMAGE_TAG**: Tag of Defender Updater the image.
 
 **Use Cases**
 * **OpenShift**<br>
