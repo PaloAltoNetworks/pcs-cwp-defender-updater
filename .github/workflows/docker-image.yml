@@ -1,29 +1,52 @@
-name: Docker Image CI
+name: Kaniko CI Image
 
 permissions: {}
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'  
+    branches:
+    - kaniko
+
 jobs:
-  docker:
+  kaniko:
     runs-on: ubuntu-latest
     environment: Docker Image
     steps:
+      # Check out the repository code
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Set Release version environment variable
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
-      - name: Build image and CI Scanning
-        run: |
-          # Build docker image
-          docker build -t ${{ vars.IMAGE_NAME }}:latest .
+        
+      # Include Metedata
+      - name: Setup Metadata
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
+        id: metadata
+        with:
+          images: "${{ vars.IMAGE_NAME }}"
 
+      # Set up Docker credentials for Kaniko
+      - name: Login to Docker
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Image and Generate tarball
+      - name: Kaniko build
+        uses: bymarshall/kaniko-action@6edc73ab8e4d4ff3a2a6f867f0e883a5ba90d710
+        with:
+          push: false
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          tar_file: image.tar
+
+      # Perform CI scanning using twistcli
+      - name: CI Scanning
+        run: |
           #Generate Console token
           token=$(curl -s -k ${{ secrets.PCC_URL }}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
             "username":"${{ secrets.PCC_USER }}",
@@ -36,19 +59,12 @@ jobs:
           ./twistcli --version
 
           #Perform CI Scan
-          ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details ${{ vars.IMAGE_NAME }}:latest
+          sudo ./twistcli images scan --address ${{ secrets.PCC_URL }} --token $token --details --tarball image.tar
 
-          #Perform Analysis Sandbox 
-          sudo ./twistcli sandbox --address ${{ secrets.PCC_URL }} --token $token --analysis-duration 2m ${{ vars.IMAGE_NAME }}:latest
-      - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+      # Push Image to the repository
+      - name: Kaniko Push
+        uses: bymarshall/kaniko-action@6edc73ab8e4d4ff3a2a6f867f0e883a5ba90d710
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push
-        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
-        with:
-          context: .
           push: true
-          tags: ${{ vars.IMAGE_NAME }}:latest,${{ vars.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
