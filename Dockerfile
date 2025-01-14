@@ -4,9 +4,6 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
-RUN mkdir twistlock
-RUN mkdir init
-RUN mkdir config
 RUN adduser -D --uid 10001 python
 RUN chown -R python:python /app
 
