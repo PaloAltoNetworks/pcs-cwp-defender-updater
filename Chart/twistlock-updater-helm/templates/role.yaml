@@ -9,7 +9,25 @@ rules:
   resources:
   - "daemonsets"
   verbs: 
-  - "list"
+  - "create"
+  - "delete"
+- apiGroups:
+  - "apps"
+  resources:
+  - "daemonsets"
+  resourceNames:
+  - twistlock-defender-ds
+  verbs: 
+  - "get"
+- apiGroups: 
+  - ""
+  - "apps"
+  - "rbac.authorization.k8s.io"
+  resources: 
+  - "secrets"
+  - "serviceaccounts"
+  - "services"
+  verbs:
   - "create"
   - "delete"
 - apiGroups: 
@@ -20,6 +38,9 @@ rules:
   - "secrets"
   - "serviceaccounts"
   - "services"
-  verbs: 
-  - "create"
-  - "delete"
+  resourceNames:
+  - twistlock-secrets
+  - twistlock-service
+  - defender
+  verbs:
+  - "get"

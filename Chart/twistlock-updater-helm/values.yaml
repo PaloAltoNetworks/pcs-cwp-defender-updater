@@ -8,7 +8,6 @@ compute:
     kind: ClusterSecretStore      # Secrets Store kind
     refresh_interval: 1h          # Secrets refresh interval
     remote_key:                   # Remote secret name
-  skip_verify: false              # Skip TLS verification
  
 job:
   cronjob_enabled: true           # Enables CronJob execution. If not enabled, no persistant volume and cronJob will be created
@@ -46,6 +45,7 @@ job:
 #    key: value
 
 defender:
+  version_tag:                    # Prisma Cloud tag used to determine the defender version to be installed
   console_name: ""                # Name of the console to be connected to. Not needed for SaaS version. For self-hosted, if not set, it will take the first SAN Name that appears under Manage > Defenders > Names
   communication_port: ""          # Overrides the Defender - Console default communication port.
   orchestrator: kubernetes        # Orchestartor to be used. Only tested with kubernetes

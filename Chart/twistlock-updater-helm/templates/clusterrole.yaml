@@ -3,43 +3,103 @@ kind: ClusterRole
 metadata:
   name: twistlock-updater-clusterrole
 rules:
-- apiGroups: [""]
-  resources: ["nodes"]
-  verbs: ["list"]
+- apiGroups: 
+  - ""
+  resources: 
+  - nodes
+  verbs: 
+  - list
 {{- if eq .Values.defender.orchestrator "openshift" }}
-- apiGroups: ["security.openshift.io"]
-  resources: ["securitycontextconstraints"] # Allow Create SecurityContextConstraints
-  verbs: ["create", "delete"]
+# Allow Create SecurityContextConstraints
+- apiGroups: 
+  - security.openshift.io
+  resources: 
+  - securitycontextconstraints 
+  verbs: 
+  - create
+  - delete
+- apiGroups: 
+  - security.openshift.io
+  resources: securitycontextconstraints
+  resourceNames: twistlock-scc
+  verbs:
+  - get
 {{- end}}
 {{- if or .Values.defender.monitor_istio .Values.defender.monitor_service_accounts .Values.defender.collect_pod_labels }}
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["clusterroles", "clusterrolebindings"] # Allow Defenders to list RBAC resources
-  verbs: ["create", "delete"]
+# Allow Defenders to list RBAC resources
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - clusterroles 
+  - clusterrolebindings
+  verbs: 
+  - create
+  - delete
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - clusterroles
+  - clusterrolebindings
+  resourceNames: 
+  - twistlock-view
+  - twistlock-view-binding
+  verbs: 
+  - get
 {{- if .Values.defender.monitor_service_accounts }}
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"] # Allow Defenders to list RBAC resources
-  verbs: ["list"]
+# Allow Defenders to list RBAC resources
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - roles
+  - rolebindings
+  - clusterroles
+  - clusterrolebindings 
+  verbs: 
+  - list
 {{- end}}
 {{- if .Values.defender.monitor_istio }}
-- apiGroups: ["security.istio.io"]
-  resources: ["authorizationpolicies", "peerauthentications"] # Allow Defenders to list Istio security resources
-  verbs: ["list"]
-- apiGroups: ["networking.istio.io"]
-  resources: ["virtualservices", "destinationrules", "gateways"] # Allow Defenders to list Istio networking resources
-  verbs: ["list"]
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "endpoints", "services"] # Allow Defenders to list pods, services and endpoints
-  verbs: ["list"]
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods/proxy"] # Allow Defenders to get pod proxy
-  verbs: ["get"]
+# Allow Defenders to list Istio security resources
+- apiGroups: 
+  - ""
+  - security.istio.io
+  - networking.istio.io
+  resources: 
+  - authorizationpolicies
+  - peerauthentications 
+  - virtualservices
+  - destinationrules
+  - gateways
+  - pods
+  - endpoints
+  - services
+  verbs: 
+  - list
+- apiGroups: 
+  - networking.istio.io # Allow Defenders to list Istio networking resources
+  resources: 
+  - virtualservices
+  - destinationrules
+  - gateways
+  verbs: 
+  - list
+- apiGroups: 
+  - ""
+  resources: 
+  - pods/proxy # Allow Defenders to get pod proxy
+  verbs: 
+  - get
 {{- end}}
 {{- if .Values.defender.collect_pod_labels }}
-- apiGroups: ["apps"]
-  resources: ["deployments", "replicasets"] # Allow Defenders to get Deployments and ReplicaSets
-  verbs: ["get"]
-- apiGroups: [""] # Core API
-  resources: ["namespaces", "pods"] # Allow Defenders to get Namespaces and Pods
-  verbs: ["get"]
+# Allow Defenders to get Deployments, ReplicaSets, Namespaces and Pods
+- apiGroups: 
+  - ""
+  - apps
+  resources: 
+  - deployments
+  - replicasets 
+  - namespaces
+  - pods 
+  verbs: 
+  - get
 {{- end}}
 {{- end}}

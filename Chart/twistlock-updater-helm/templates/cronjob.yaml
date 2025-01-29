@@ -126,6 +126,10 @@ spec:
               value: {{ .Values.job.debug | quote }}
             - name: HAS_VOLUME
               value: {{ .Values.job.has_volume | quote }}
+            {{- if .Values.defender.version_tag }}
+            - name: VERSION_TAG
+              value: {{ .Values.defender.version_tag | quote }}
+            {{- end }}
             securityContext:
               allowPrivilegeEscalation: false
               runAsNonRoot: true

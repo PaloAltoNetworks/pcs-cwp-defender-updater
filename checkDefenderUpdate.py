@@ -1,22 +1,30 @@
 #!/bin/ash
 import os
-import requests
-import sys
 import re
 import yaml
 import json
 import shutil
 
+from urllib.parse import urlparse
 from datetime import datetime
-from kubernetes import client, config
+from kubernetes import config
+from kubernetes.client import CoreV1Api, AppsV1Api, RbacAuthorizationV1Api, CustomObjectsApi
 from kubernetes.client.exceptions import ApiException
 from time import sleep
 
+from prismaapi import PrismaAPI
 
-#Compute API parameters 
-COMPUTE_API_ENDPOINT = os.getenv("COMPUTE_API_ENDPOINT", "https://us-east1.cloud.twistlock.com/us-1-23456789")
+#Prisma API parameters 
+PRISMA_API_ENDPOINT = os.getenv("PRISMA_API_ENDPOINT", "")
+COMPUTE_API_ENDPOINT = os.getenv("COMPUTE_API_ENDPOINT", "")
 PRISMA_USERNAME = os.getenv("PRISMA_USERNAME", "")
 PRISMA_PASSWORD = os.getenv("PRISMA_PASSWORD", "")
+VERSION_TAG = os.getenv("VERSION_TAG", "")
+DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "y")
+SLEEP = int(os.getenv("SLEEP", "5"))
+LIMIT = int(os.getenv("LIMIT", "50"))
+CONNECT_TIMEOUT = int(os.getenv("CONNECT_TIMEOUT", "2"))
+READ_TIMEOUT = int(os.getenv("READ_TIMEOUT", "7"))
 SKIP_VERIFY = os.getenv("SKIP_VERIFY", "false").lower() in ["true", "1", "y"]
 
 
@@ -75,62 +83,69 @@ HAS_VOLUME = os.getenv("HAS_VOLUME", "true").lower() in ["true", "1", "y"]
 START_NOW = os.getenv("START_NOW", "false").lower() in ["true", "1", "y"]
 DEBUG = os.getenv("DEBUG", "false").lower() in ["true", "1", "y"]
 
-def checkConnectivity(api_endpoint, verify=True):
-    response = requests.get(f"{api_endpoint}/api/v1/_ping", verify=verify)
-    if response.status_code == 200:
-        print(f"{datetime.now()} Connection to the endpoint {api_endpoint} succedded.")
+IGNORED_FIELDS = ("status", "clusterIPs", "clusterIp", "creationTimestamp", "managedFields", "resourceVersion", "uid", "generation")
+
+def snake_to_camel(snake_str):
+    components = snake_str.split('_')
+    return components[0] + ''.join(x.title() for x in components[1:])
+
+
+def convert_dict_to_camel_case(data):
+    if isinstance(data, dict):
+        new_dict = {}
+
+        for key, value in data.items():
+            if value != None:
+                if key.lower() == "host_pid":
+                    new_key = "hostPID"
+                else:
+                    new_key = snake_to_camel(key)
+
+                if not new_key in IGNORED_FIELDS:
+                    new_dict[new_key] = convert_dict_to_camel_case(value)
+        return new_dict
+    
+    elif isinstance(data, list):
+        return [convert_dict_to_camel_case(item) for item in data]
+    
+    elif isinstance(data, str):
+        return data.replace("'","\"")
+    
     else:
-        print(f"{datetime.now()} Connection to the endpoint {api_endpoint} failed.")
-        sys.exit(2)
+        return data
 
 
-def getToken(username, password, api_endpoint, verify):
-    headers = {
-        "Content-Type": "application/json"
-    }
-    body = {
-        "username": username,
-        "password": password
-    }
-
-    response = requests.post(f"{api_endpoint}/api/v1/authenticate", json=body, headers=headers, verify=verify)
-    if response.status_code == 200:
-        return response.json()["token"]
-    
-    print(f"{datetime.now()} Error while authenticating. Error: {response.json()['err']}")
-    sys.exit(5)
-
-
-def getDaemonsetVersion(apps_v1_api):
-    daemonsets_list = apps_v1_api.list_namespaced_daemon_set(NAMESPACE)
+def getConsoleInfo(prismaAPI: PrismaAPI):
     version = ""
-
-    for item in daemonsets_list.items:
-        if item.metadata.name == DAEMONSET_NAME:
-            for container in item.spec.template.spec.containers:
-                image = container.image
-                version = re.findall(VERSION_REGEX, image)[0].replace("_", ".")
-                break
-    
-    return version
-
-
-def getConsoleInfo(api_endpoint, headers, verify=True):
-    response = requests.get(f"{api_endpoint}/api/v1/settings/system", headers=headers, verify=verify)
     console_name = CONSOLE_NAME
+    
+    if VERSION_TAG:
+        response = json.loads(prismaAPI.compute_request("/api/v1/tags", method="GET", skip_error=True))
+        if response:
+            for tag in response:
+                if tag["name"] == VERSION_TAG:
+                    if "description" in tag:
+                        if re.search(VERSION_REGEX.replace("_", "."), tag["description"]):
+                            print(f"{datetime.now()} using tag {VERSION_TAG} as the console version")
+                            version = tag["description"]
+                    break
 
-    if response.status_code == 200:
-        version = response.json()["version"]
-        if not console_name:
-            console_name = response.json()["consoleNames"][0]
-        
-        return version, console_name
+    # Get version
+    if not version: version = prismaAPI.compute_request("/api/v1/version", method="GET").decode().replace('"','')
 
-    print(f"{datetime.now()} Error while getting console version. Error: {response.json()['err']}")
-    sys.exit(5)
+    # Get console name
+    if not console_name:
+        response = json.loads(prismaAPI.compute_request("/api/v1/settings/system", method="GET", skip_error=True))
+
+        if not response: 
+            console_name = urlparse(COMPUTE_API_ENDPOINT).netloc
+        else:
+            console_name = response["consoleNames"][0]
+    
+    return version, console_name
 
 
-def deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api):
+def deleteDeamonSetResources(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacAuthorizationV1Api, custom_api: CustomObjectsApi):
     deleteK8SResource(rbac_v1_api.delete_cluster_role, CLUSTER_ROLE, "ClusterRole")
     deleteK8SResource(rbac_v1_api.delete_cluster_role_binding, CLUSTER_ROLEBINDING, "ClusterRoleBinding")
     deleteK8SResource(apps_v1_api.delete_namespaced_daemon_set, DAEMONSET_NAME, "DaemonSet", NAMESPACE)
@@ -141,7 +156,7 @@ def deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api):
         deleteK8SResource(custom_api.delete_cluster_custom_object, OPENSHIFT_SCC, "SecurityContextConstraints")
 
 
-def deleteK8SResource(delete_function, resource_name, kind="", namespace=""):
+def deleteK8SResource(delete_function, resource_name: str, kind="", namespace=""):
     try:
         if kind == "SecurityContextConstraints":
             if DEBUG: print(f"{datetime.now()} Deleting {kind} resource named {resource_name}")
@@ -164,10 +179,32 @@ def deleteK8SResource(delete_function, resource_name, kind="", namespace=""):
         print(f"{datetime.now()} Error: {error}")
 
 
-def createK8SResource(create_function, body, namespace=""):
+def readK8SResource(read_function, name, namespace="", kind=""):
+    data = None
     try:
-        if body['kind'] == "SecurityContextConstraints":
-            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']}")
+        if kind == "SecurityContextConstraints":
+            read_function(
+                group="security.openshift.io", 
+                version="v1", 
+                plural="securitycontextconstraints",
+                name=name
+            )
+
+        elif namespace:
+            data = convert_dict_to_camel_case(read_function(name, namespace).to_dict())
+
+        else:
+            data = convert_dict_to_camel_case(read_function(name).to_dict())
+
+    except ApiException as error:
+        print(f"{datetime.now()} Error: {error}")
+    
+    return data
+
+
+def createK8SResource(create_function, body, namespace="", kind=""):
+    try:
+        if kind == "SecurityContextConstraints":
             create_function(
                 group="security.openshift.io", 
                 version="v1", 
@@ -176,11 +213,9 @@ def createK8SResource(create_function, body, namespace=""):
             )
 
         elif namespace:
-            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']} in namespace {namespace}")
             create_function(namespace, body)
 
         else:
-            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']}")
             create_function(body)
             
 
@@ -188,58 +223,54 @@ def createK8SResource(create_function, body, namespace=""):
         print(f"{datetime.now()} Error: {error}")
 
 
-def applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, yaml_file):
+def applyYAML(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacAuthorizationV1Api, custom_api: CustomObjectsApi, yaml_file: str, version=""):
     with open(yaml_file, 'r') as manifest:
-        resources = yaml.safe_load_all(manifest)
-    
-        for resource in resources:
-            if resource:
-                if "kind" in resource:
-                    kind = resource["kind"]
-                    if kind == "ClusterRole": createK8SResource(rbac_v1_api.create_cluster_role, resource)
-                    elif kind == "ClusterRoleBinding": createK8SResource(rbac_v1_api.create_cluster_role_binding, resource)
-                    elif kind == "Secret": createK8SResource(core_v1_api.create_namespaced_secret, resource, NAMESPACE)
-                    elif kind == "ServiceAccount": createK8SResource(core_v1_api.create_namespaced_service_account, resource, NAMESPACE)
-                    elif kind == "DaemonSet": createK8SResource(apps_v1_api.create_namespaced_daemon_set, resource, NAMESPACE)
-                    elif kind == "Service": createK8SResource(core_v1_api.create_namespaced_service, resource, NAMESPACE)
-                    elif kind == "SecurityContextConstraints": createK8SResource(custom_api.create_cluster_custom_object, resource)
+        resources = list(yaml.safe_load_all(manifest))
+        
+    for resource in resources:
+        if resource:
+            if "kind" in resource:
+                kind = resource["kind"]
+                if kind == "ClusterRole": createK8SResource(rbac_v1_api.create_cluster_role, resource)
+                elif kind == "ClusterRoleBinding": createK8SResource(rbac_v1_api.create_cluster_role_binding, resource)
+                elif kind == "Secret": createK8SResource(core_v1_api.create_namespaced_secret, resource, NAMESPACE)
+                elif kind == "ServiceAccount": createK8SResource(core_v1_api.create_namespaced_service_account, resource, NAMESPACE)
+                elif kind == "DaemonSet": 
+                    # Deploy the defender using a particular image version
+                    if version:
+                        image = re.sub(VERSION_REGEX, version.replace(".", "_"), resource["spec"]["template"]["spec"]["containers"][0]["image"])
+                        resource["spec"]["template"]["spec"]["containers"][0]["image"] = image
+
+                    createK8SResource(apps_v1_api.create_namespaced_daemon_set, resource, NAMESPACE)
+                elif kind == "Service": createK8SResource(core_v1_api.create_namespaced_service, resource, NAMESPACE)
+                elif kind == "SecurityContextConstraints": createK8SResource(custom_api.create_cluster_custom_object, resource)
 
 
-def defenderStatusOk(console_name, node_name, api_endpoint, headers, verify=True):
-    response = requests.get(f"{api_endpoint}/api/v1/defenders?search={node_name}", headers=headers, verify=verify)
-    data = response.json()
-
-    if response.status_code == 200:
-        if data:
-            for host in response.json():
-                if host["connected"]:
-                    return host["connected"]
-        else:
-            print(f"{datetime.now()} Defender for node {node_name} not found in console. Verify you are using the appropriate console name. Console Name: {console_name}")
+def defenderStatusOk(console_name: str, node_name: str, prismaAPI: PrismaAPI):
+    response = json.loads(prismaAPI.compute_request(f"/api/v1/defenders?search={node_name}", method="GET"))
+    if response:
+        for host in response:
+            if host["connected"]:
+                return host["connected"]
+    else:
+        print(f"{datetime.now()} Defender for node {node_name} not found in console. Verify you are using the appropriate console name. Console Name: {console_name}")
 
     return False
 
 
-def applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, defender_config, api_endpoint, headers, verify=True):
-    response = requests.post(f"{api_endpoint}/api/v1/defenders/daemonset.yaml", json=defender_config, headers=headers, verify=verify)
-
-    if response.status_code == 200:
-        if DEBUG:
-            print(f"{datetime.now()} Creating the following deamonset \n{response.text}")
-        
-        with open(NEW_DEAMONSET_FILE, "w") as daemonset_manifest:
-            daemonset_manifest.write(response.text)
-            daemonset_manifest.close()
+def applyDaemonSet(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacAuthorizationV1Api, custom_api: CustomObjectsApi, defender_config: dict, prismaAPI: PrismaAPI, version = ""):
+    response = prismaAPI.compute_request("/api/v1/defenders/daemonset.yaml", body=defender_config).decode()
+    #if DEBUG: print(f"{datetime.now()} Creating the following deamonset \n{response}")
+    
+    with open(NEW_DEAMONSET_FILE, "w") as daemonset_manifest:
+        daemonset_manifest.write(response)
+        daemonset_manifest.close()
         
         deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
-        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, NEW_DEAMONSET_FILE)
-
-    else:
-        print(f"{datetime.now()} Error while downloading Defender. Error: {response.json()['err']}")
-        sys.exit(5)
+        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, NEW_DEAMONSET_FILE, version)
 
 
-def configChanged(new_defender_config):
+def configChanged(new_defender_config: dict):
     if os.path.exists(DEAMONSET_CONFIG):
         with open(DEAMONSET_CONFIG, "r") as config_file:
             defender_config = json.loads(config_file.read())
@@ -268,20 +299,55 @@ def configChanged(new_defender_config):
 
 def main():
     config.load_incluster_config()
-    core_v1_api = client.CoreV1Api()
-    apps_v1_api = client.AppsV1Api()
-    rbac_v1_api = client.RbacAuthorizationV1Api()
-    custom_api = client.CustomObjectsApi()
+    core_v1_api = CoreV1Api()
+    apps_v1_api = AppsV1Api()
+    rbac_v1_api = RbacAuthorizationV1Api()
+    custom_api = CustomObjectsApi()
+    daemonset_version = ""
 
-    checkConnectivity(COMPUTE_API_ENDPOINT, not SKIP_VERIFY)
-    token = getToken(PRISMA_USERNAME, PRISMA_PASSWORD, COMPUTE_API_ENDPOINT, not SKIP_VERIFY)
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/json"
-    }
+    prismaAPI = PrismaAPI(
+        PRISMA_API_ENDPOINT, 
+        COMPUTE_API_ENDPOINT, 
+        PRISMA_USERNAME, 
+        PRISMA_PASSWORD, 
+        LIMIT, 
+        SLEEP, 
+        CONNECT_TIMEOUT, 
+        READ_TIMEOUT, 
+        DEBUG
+    )
     
-    console_version, console_name = getConsoleInfo(COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
-    daemonset_version = getDaemonsetVersion(apps_v1_api)
+    console_version, console_name = getConsoleInfo(prismaAPI)
+
+    # backup manifests
+    resources = []
+
+    # Backup the resources belonging to the deployment
+    resources.append(readK8SResource(rbac_v1_api.read_cluster_role, CLUSTER_ROLE))
+    resources.append(readK8SResource(rbac_v1_api.read_cluster_role_binding, CLUSTER_ROLEBINDING))
+    resources.append(readK8SResource(core_v1_api.read_namespaced_secret, DAEMONSET_SECRET, NAMESPACE))
+    resources.append(readK8SResource(core_v1_api.read_namespaced_service_account, DAEMONSET_SERVICEACCOUNT, NAMESPACE))
+    defender_resource = readK8SResource(apps_v1_api.read_namespaced_daemon_set, DAEMONSET_NAME, NAMESPACE)
+    resources.append(defender_resource)
+    resources.append(readK8SResource(core_v1_api.read_namespaced_service, DAEMONSET_SERVICE, NAMESPACE))
+
+    if ORCHESTRATOR == "openshift":
+        resources.append(readK8SResource(custom_api.get_cluster_custom_object, OPENSHIFT_SCC, kind="SecurityContextConstraints"))
+
+
+    # Backup resources
+    with open(DEAMONSET_FILE, "w") as daemonset_file:
+        for resource in resources:
+            if resource:
+                yaml.safe_dump(resource, daemonset_file, default_flow_style=False)
+                daemonset_file.write("---\n")
+    
+    if DEBUG: print(f"Backup file: \n{open(DEAMONSET_FILE).read()}")
+
+    # Get current defender version
+    if defender_resource:
+        image = defender_resource["spec"]["template"]["spec"]["containers"][0]["image"]
+        daemonset_version = re.findall(VERSION_REGEX, image)[0].replace("_", ".")
 
     if COMMUNICATION_PORT:
         console_name = f"{console_name}:{COMMUNICATION_PORT}"
@@ -345,9 +411,7 @@ def main():
     if DEBUG: print(f"New defender configuration:\n{new_defender_config}")
 
     print(f"{datetime.now()} Installing defender version {console_version}")
-
-
-    applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, new_defender_config, COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
+    applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, new_defender_config, prismaAPI, console_version)
 
     # Checking defender Status for possible rollback
     node_name = core_v1_api.list_node().items[0].metadata.name
@@ -356,7 +420,7 @@ def main():
 
     while error_count <= MAX_ERRORS:
         sleep(CHECK_SLEEP)
-        status_ok = defenderStatusOk(console_name, node_name, COMPUTE_API_ENDPOINT, headers, not SKIP_VERIFY)
+        status_ok = defenderStatusOk(console_name, node_name, prismaAPI)
         if status_ok:
             break
         error_count += 1
@@ -372,17 +436,9 @@ def main():
         os.rename(NEW_DEAMONSET_FILE, DEAMONSET_FILE)
 
     else:
-        if os.path.exists(DEAMONSET_FILE):
-            print(f"{datetime.now()} Defender in incorrect status. Rolling back to previous version.")
-            if DEBUG:
-                with open(DEAMONSET_CONFIG, "r") as config_file:
-                    print(f"Previous defender configuration:\n{config_file.read()}")
-                    config_file.close()
-
-            deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
-            applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
-        else:
-            print(f"{datetime.now()} Defender in incorrect status. Cannot rollback due to theres no previous version")  
+        print(f"{datetime.now()} Defender in incorrect status. Rolling back to previous version {daemonset_version}.")
+        deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
+        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
 
 
 if __name__ == "__main__":

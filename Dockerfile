@@ -21,6 +21,7 @@ RUN rm -f /bin/sh
 
 COPY checkDefenderUpdate.py .
 COPY deleteJob.py .
+COPY prismaapi.py .
 
 USER python
 

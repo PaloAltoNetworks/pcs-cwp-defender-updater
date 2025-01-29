@@ -127,6 +127,10 @@ spec:
           value: {{ .Values.job.has_volume | quote }}
         - name: START_NOW
           value: {{ .Values.job.start_now | quote }}
+        {{- if .Values.defender.version_tag }}
+        - name: VERSION_TAG
+          value: {{ .Values.defender.version_tag | quote }}
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
