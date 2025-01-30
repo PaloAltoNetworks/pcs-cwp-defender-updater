@@ -124,8 +124,6 @@ spec:
               value: {{ .Values.defender.region | quote }}
             - name: DEBUG
               value: {{ .Values.job.debug | quote }}
-            - name: HAS_VOLUME
-              value: {{ .Values.job.has_volume | quote }}
             {{- if .Values.defender.version_tag }}
             - name: VERSION_TAG
               value: {{ .Values.defender.version_tag | quote }}
@@ -162,13 +160,8 @@ spec:
             terminationMessagePolicy: File
           volumes:
           - name: twistlock-updater-data
-            {{- if .Values.job.has_volume }}
-            persistentVolumeClaim:
-              claimName: "twistlock-updater-data"
-            {{- else }}
             emptyDir:
               sizeLimit: {{ .Values.job.storage.size }}
-            {{- end }}
         {{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
           - name: daemonset-extra-config
             configMap:

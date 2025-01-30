@@ -11,7 +11,6 @@ compute:
  
 job:
   cronjob_enabled: true           # Enables CronJob execution. If not enabled, no persistant volume and cronJob will be created
-  has_volume: false               # Verifies if job has Persistant Volume. If set to false, then no Persistant Volume will be created.
   schedule: "0 0 * * Sun"         # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
   timezone: "Etc/UTC"             # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
   image_name:                     # *Name of the image to be used. Must be full path ej REGISTRY_NAME/IMAGE_NAME:IMAGE_TAG
@@ -28,11 +27,8 @@ job:
     refresh_interval: 1h          # Secrets refresh interval
     remote_key:                   # Remote secret name
   role_arn:                       # AWS role ARN for CronJob
-  storage:                        # Storage settings for PersistantVolumeClaim. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
-    access_mode: ReadWriteOnce    # Storage access mode for CronJob Persistant Volume
-    size: 1Gi                     # Storage size for CronJob Persistant Volume
-    class_name:                   # Storage class for CronJob Persistant Volume. If not set, it will use the default Storage Class
-    volume_name:                  # Name of the volume used. Used when a needs to reuse a existing PV
+  storage:                        # Storage settings for backups. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+    size: 1Gi                     # Storage size for CronJob to write backup
   debug: false                    # Print extended output of the CronJob
   init_configmap:                 # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
   annotations:                    # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -57,7 +53,7 @@ defender:
   runtime_socket_path: ""         # Container runtime socket path
   node_selector: ''               # Specify on which nodes will the deamonset apply to. Format: 'key: "value"'
   role_arn: ""                    # AWS role ARN for DaemonSet defender 
-  unique_hostname: false          # Assign unique hostnames to each defended host
+  unique_hostname: true           # Assign unique hostnames to each defended host
   monitor_istio: false            # Allow istio monitoring
   bottlerocket: false             # Deployment made over BottleRocket OS nodes
   gke_autopilot: false            # Deployment made over GKE Autopilot
@@ -77,16 +73,13 @@ defender:
     noProxy:                      # Pods that bypass the proxy
     password:                     # Password to be used to connect to the proxy
     user:                         # User to be used to connect to the proxy
-  tolerations:                    # Tolerations configuration. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-#  - effect: NoSchedule           # Toleration effect
-#    key: key1                    # Toleration key
-#    operator: Equels             # Toleration operator
-#    toleration_seconds: 0        # Toleration seconds
-#    value: value1                # Toleration value
-#  - effect: NoExecute 
-#    key: key1
-#    operator: Exists
-#    toleration_seconds: 0
+  tolerations:                    # Tolerations configuration to install the defender on master nodes. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+#  - operator: Exists
+#    effect: NoSchedule
+#  - operator: Exists
+#    effect: PreferNoSchedule
+#  - operator: Exists
+#    effect: NoExecute
   annotations:                    # Defender DaemonSet annotations
 #    annotation1: test
 

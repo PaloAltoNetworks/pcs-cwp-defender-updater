@@ -3,7 +3,6 @@ import os
 import re
 import yaml
 import json
-import shutil
 
 from urllib.parse import urlparse
 from datetime import datetime
@@ -73,17 +72,14 @@ VERSION_REGEX = os.getenv("VERSION_REGEX", "[0-9]{2}_[0-9]{2}_[0-9]{3}")
 MAX_ERRORS = int(os.getenv("MAX_ERRORS", "3"))
 CHECK_SLEEP = int(os.getenv("CHECK_SLEEP", "15"))
 WORKDIR = os.getcwd()
-DEAMONSET_CONFIG = f"{WORKDIR}/twistlock/daemonsetConfig.json"
 DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.yaml"
 NEW_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.new.yaml"
-OLD_DEAMONSET_FILE = f"{WORKDIR}/twistlock/daemonset.old.yaml"
-INIT_DEAMONSET_FILE = f"{WORKDIR}/init/daemonset.yaml"
 DEAMONSET_EXTRACONFIG_FILE = f"{WORKDIR}/config/daemonset.extraconfig.yaml"
 HAS_VOLUME = os.getenv("HAS_VOLUME", "true").lower() in ["true", "1", "y"]
 START_NOW = os.getenv("START_NOW", "false").lower() in ["true", "1", "y"]
 DEBUG = os.getenv("DEBUG", "false").lower() in ["true", "1", "y"]
 
-IGNORED_FIELDS = ("status", "clusterIPs", "clusterIp", "creationTimestamp", "managedFields", "resourceVersion", "uid", "generation")
+IGNORED_DS_FIELDS = ("status", "clusterIPs", "clusterIp", "creationTimestamp", "managedFields", "resourceVersion", "uid", "generation")
 
 def snake_to_camel(snake_str):
     components = snake_str.split('_')
@@ -101,7 +97,7 @@ def convert_dict_to_camel_case(data):
                 else:
                     new_key = snake_to_camel(key)
 
-                if not new_key in IGNORED_FIELDS:
+                if not new_key in IGNORED_DS_FIELDS:
                     new_dict[new_key] = convert_dict_to_camel_case(value)
         return new_dict
     
@@ -201,10 +197,10 @@ def readK8SResource(read_function, name, namespace="", kind=""):
     
     return data
 
-
-def createK8SResource(create_function, body, namespace="", kind=""):
+def createK8SResource(create_function, body, namespace=""):
     try:
-        if kind == "SecurityContextConstraints":
+        if body['kind'] == "SecurityContextConstraints":
+            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']}\n{yaml.dump(body)}")
             create_function(
                 group="security.openshift.io", 
                 version="v1", 
@@ -213,12 +209,13 @@ def createK8SResource(create_function, body, namespace="", kind=""):
             )
 
         elif namespace:
+            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']} in namespace {namespace}\n{yaml.dump(body)}")
             create_function(namespace, body)
 
         else:
+            if DEBUG: print(f"{datetime.now()} Creating {body['kind']} resource named {body['metadata']['name']}\n{yaml.dump(body)}")
             create_function(body)
             
-
     except ApiException as error:
         print(f"{datetime.now()} Error: {error}")
 
@@ -237,7 +234,7 @@ def applyYAML(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacA
                 elif kind == "ServiceAccount": createK8SResource(core_v1_api.create_namespaced_service_account, resource, NAMESPACE)
                 elif kind == "DaemonSet": 
                     # Deploy the defender using a particular image version
-                    if version:
+                    if version and not IMAGE_NAME:
                         image = re.sub(VERSION_REGEX, version.replace(".", "_"), resource["spec"]["template"]["spec"]["containers"][0]["image"])
                         resource["spec"]["template"]["spec"]["containers"][0]["image"] = image
 
@@ -260,7 +257,6 @@ def defenderStatusOk(console_name: str, node_name: str, prismaAPI: PrismaAPI):
 
 def applyDaemonSet(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacAuthorizationV1Api, custom_api: CustomObjectsApi, defender_config: dict, prismaAPI: PrismaAPI, version = ""):
     response = prismaAPI.compute_request("/api/v1/defenders/daemonset.yaml", body=defender_config).decode()
-    #if DEBUG: print(f"{datetime.now()} Creating the following deamonset \n{response}")
     
     with open(NEW_DEAMONSET_FILE, "w") as daemonset_manifest:
         daemonset_manifest.write(response)
@@ -270,40 +266,13 @@ def applyDaemonSet(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: 
         applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, NEW_DEAMONSET_FILE, version)
 
 
-def configChanged(new_defender_config: dict):
-    if os.path.exists(DEAMONSET_CONFIG):
-        with open(DEAMONSET_CONFIG, "r") as config_file:
-            defender_config = json.loads(config_file.read())
-        
-        for feature in new_defender_config:
-            if feature in defender_config:
-                if defender_config[feature] != new_defender_config[feature]:
-                    print(f"{datetime.now()} Change detected in defender configuration.")
-                    if DEBUG:
-                        print(f"Current defender configuration:\n{defender_config}")
-                    
-                    return True
-            else:
-                print(f"{datetime.now()} Change detected in defender configuration.")
-                if DEBUG:
-                        print(f"{datetime.now()} Current defender configuration:\n{defender_config}")
-                    
-                return True
-            
-        print(f"{datetime.now()} Change not found in defender configuration.")
-        return False
-    
-    print(f"{datetime.now()} defender configuration file not found.")
-    return True
-
-
 def main():
     config.load_incluster_config()
     core_v1_api = CoreV1Api()
     apps_v1_api = AppsV1Api()
     rbac_v1_api = RbacAuthorizationV1Api()
     custom_api = CustomObjectsApi()
-    daemonset_version = ""
+    current_version = ""
 
     prismaAPI = PrismaAPI(
         PRISMA_API_ENDPOINT, 
@@ -319,36 +288,7 @@ def main():
     
     console_version, console_name = getConsoleInfo(prismaAPI)
 
-    # backup manifests
-    resources = []
-
-    # Backup the resources belonging to the deployment
-    resources.append(readK8SResource(rbac_v1_api.read_cluster_role, CLUSTER_ROLE))
-    resources.append(readK8SResource(rbac_v1_api.read_cluster_role_binding, CLUSTER_ROLEBINDING))
-    resources.append(readK8SResource(core_v1_api.read_namespaced_secret, DAEMONSET_SECRET, NAMESPACE))
-    resources.append(readK8SResource(core_v1_api.read_namespaced_service_account, DAEMONSET_SERVICEACCOUNT, NAMESPACE))
-    defender_resource = readK8SResource(apps_v1_api.read_namespaced_daemon_set, DAEMONSET_NAME, NAMESPACE)
-    resources.append(defender_resource)
-    resources.append(readK8SResource(core_v1_api.read_namespaced_service, DAEMONSET_SERVICE, NAMESPACE))
-
-    if ORCHESTRATOR == "openshift":
-        resources.append(readK8SResource(custom_api.get_cluster_custom_object, OPENSHIFT_SCC, kind="SecurityContextConstraints"))
-
-
-    # Backup resources
-    with open(DEAMONSET_FILE, "w") as daemonset_file:
-        for resource in resources:
-            if resource:
-                yaml.safe_dump(resource, daemonset_file, default_flow_style=False)
-                daemonset_file.write("---\n")
-    
-    if DEBUG: print(f"Backup file: \n{open(DEAMONSET_FILE).read()}")
-
-    # Get current defender version
-    if defender_resource:
-        image = defender_resource["spec"]["template"]["spec"]["containers"][0]["image"]
-        daemonset_version = re.findall(VERSION_REGEX, image)[0].replace("_", ".")
-
+    # Set defender configuration parameters
     if COMMUNICATION_PORT:
         console_name = f"{console_name}:{COMMUNICATION_PORT}"
 
@@ -383,40 +323,66 @@ def main():
         "uniqueHostname": UNIQUE_HOSTNAME
     }
 
+    # backup manifests
+    resources = []
+
+    # Backup the resources belonging to the deployment
+    resources.append(readK8SResource(rbac_v1_api.read_cluster_role, CLUSTER_ROLE))
+    resources.append(readK8SResource(rbac_v1_api.read_cluster_role_binding, CLUSTER_ROLEBINDING))
+    resources.append(readK8SResource(core_v1_api.read_namespaced_secret, DAEMONSET_SECRET, NAMESPACE))
+    resources.append(readK8SResource(core_v1_api.read_namespaced_service_account, DAEMONSET_SERVICEACCOUNT, NAMESPACE))
+    defender_resource = readK8SResource(apps_v1_api.read_namespaced_daemon_set, DAEMONSET_NAME, NAMESPACE)
+    resources.append(defender_resource)
+    resources.append(readK8SResource(core_v1_api.read_namespaced_service, DAEMONSET_SERVICE, NAMESPACE))
+
+    if ORCHESTRATOR == "openshift":
+        resources.append(readK8SResource(custom_api.get_cluster_custom_object, OPENSHIFT_SCC, kind="SecurityContextConstraints"))
+
+    # Backup resources
+    with open(DEAMONSET_FILE, "w") as daemonset_file:
+        for resource in resources:
+            if resource:
+                yaml.safe_dump(resource, daemonset_file, default_flow_style=False)
+                daemonset_file.write("---\n")
+    
+    # Get current defender version
+    if defender_resource:
+        image = defender_resource["spec"]["template"]["spec"]["containers"][0]["image"]
+        current_version = re.findall(VERSION_REGEX, image)[0].replace("_", ".")
+
+
     if os.path.exists(DEAMONSET_EXTRACONFIG_FILE):
         with open(DEAMONSET_EXTRACONFIG_FILE) as extra_config_file:
             extra_config = yaml.safe_load(extra_config_file)
             new_defender_config.update(extra_config)
 
 
-    if not HAS_VOLUME:
-        if not START_NOW:
-            if console_version == daemonset_version:
-                print(f"{datetime.now()} Console and Defender version match. Version {console_version}")
-                return 0
-
-    if os.path.exists(DEAMONSET_FILE) and not configChanged(new_defender_config):
-        if console_version == daemonset_version:
+    if not START_NOW:
+        if console_version == current_version:
             print(f"{datetime.now()} Console and Defender version match. Version {console_version}")
             return 0
         
-        if not daemonset_version:
+        if not current_version:
             print(f"{datetime.now()} Defender not installed.")
         else:
-            print(f"{datetime.now()} Console and Defender version doesn't match. Console version: {console_version}; Defender version: {daemonset_version}")
-    
-    elif os.path.exists(INIT_DEAMONSET_FILE):
-        shutil.copyfile(INIT_DEAMONSET_FILE, DEAMONSET_FILE)
+            print(f"{datetime.now()} Console and Defender version doesn't match. Console version: {console_version}; Defender version: {current_version}")
 
-    if DEBUG: print(f"New defender configuration:\n{new_defender_config}")
+    else:
+        print(f"{datetime.now()} Executing initial installation")
+
 
     print(f"{datetime.now()} Installing defender version {console_version}")
+    if DEBUG: 
+        print_config = {"Configuration": new_defender_config}
+        print(f"{yaml.dump(print_config)}")
+
     applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, new_defender_config, prismaAPI, console_version)
 
     # Checking defender Status for possible rollback
     node_name = core_v1_api.list_node().items[0].metadata.name
     error_count = 0
     status_ok = False
+    print(f"{datetime.now()} Instalation of defender version {console_version} completed. Checking for the defender status...")
 
     while error_count <= MAX_ERRORS:
         sleep(CHECK_SLEEP)
@@ -427,18 +393,17 @@ def main():
     
     if status_ok:
         print(f"{datetime.now()} Defender version {console_version} in correct status!!")
-        with open(DEAMONSET_CONFIG, "w") as config_file:
-            config_file.write(json.dumps(new_defender_config))
-
-        if os.path.exists(DEAMONSET_FILE):
-            os.rename(DEAMONSET_FILE, OLD_DEAMONSET_FILE)
-
-        os.rename(NEW_DEAMONSET_FILE, DEAMONSET_FILE)
 
     else:
-        print(f"{datetime.now()} Defender in incorrect status. Rolling back to previous version {daemonset_version}.")
-        deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
-        applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
+        if current_version:
+            print(f"{datetime.now()} Defender in incorrect status. Rolling back to previous version {current_version}.")
+
+            # Execute rollback
+            deleteDeamonSetResources(core_v1_api, apps_v1_api, rbac_v1_api, custom_api)
+            applyYAML(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, DEAMONSET_FILE)
+            print(f"{datetime.now()} Rollback completed. Defender version {current_version}.")
+        else:
+            print(f"{datetime.now()} No previous defender version. Cannot Rollback")
 
 
 if __name__ == "__main__":
