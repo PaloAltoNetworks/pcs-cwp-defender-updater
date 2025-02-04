@@ -26,9 +26,9 @@ In Prisma Cloud SaaS version go to **Settings** > **Access Control** > **Add** >
 
 Once created this permissions group, you must create a role with access to **ALL** the Account Groups and On-Prem and Other Cloud Providers:
 
+![Prisma Cloud SaaS Role](./images/saas-role.png)
 
-
-Then create its corresponding service account and access key. 
+Then create its corresponding service account and access key.
 
 The values of the access key and secret key of this service account must be the values assigned to *compute.username* and *compute.password* of the helm chart respectively.
 
@@ -126,7 +126,7 @@ helm install external-secrets external-secrets/external-secrets -n external-secr
 
 ```yaml
 compute:
-  secret_store:                               
+  secret_store:                             
     kind: SecretStore
 
 job:
@@ -213,7 +213,7 @@ But if you are using **EKS**, **AKS** or **GKE** this value is **not** required.
 
 #### **Use Cases**
 
-* **OpenShift**`<br>`
+* **OpenShift** `<br>`
   For OpenShift cluster please add the following values:
 
 ```yaml
@@ -223,7 +223,7 @@ defender:
   selinux: true
 ```
 
-* **StartJob**`<br>`
+* **StartJob** `<br>`
   By default it creates a Job to install the defender when executing a `helm install` or `helm upgrade`. If you want to disable this behavior, set the value *job.start_now* to *false* as follows:
 
 ```yaml
@@ -231,7 +231,7 @@ job:
   start_now: false
 ```
 
-* **DeleteJob**`<br>`
+* **DeleteJob** `<br>`
   By default it creates a Job to uninstall the defender when executing a `helm uninstall`. If you want to disable this behavior, set the value *job.delete_all* to *false* as follows:
 
 ```yaml
@@ -239,7 +239,7 @@ job:
   delete_all: false
 ```
 
-* **Disable CronJob**`<br>`
+* **Disable CronJob** `<br>`
   If you want to disable the CronJob creation, then set the value *job.cronjob_enabled* to *false* as follows:
 
 ```yaml
