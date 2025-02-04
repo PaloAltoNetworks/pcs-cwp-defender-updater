@@ -1,14 +1,9 @@
+{{- if or (eq .Values.defender.orchestrator "openshift") .Values.defender.monitor_istio .Values.defender.monitor_service_accounts .Values.defender.collect_pod_labels }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: twistlock-updater-clusterrole
 rules:
-- apiGroups: 
-  - ""
-  resources: 
-  - nodes
-  verbs: 
-  - list
 {{- if eq .Values.defender.orchestrator "openshift" }}
 # Allow Create SecurityContextConstraints
 - apiGroups: 
@@ -17,13 +12,13 @@ rules:
   - securitycontextconstraints 
   verbs: 
   - create
-  - delete
 - apiGroups: 
   - security.openshift.io
   resources: securitycontextconstraints
   resourceNames: twistlock-scc
   verbs:
   - get
+  - delete
 {{- end}}
 {{- if or .Values.defender.monitor_istio .Values.defender.monitor_service_accounts .Values.defender.collect_pod_labels }}
 # Allow Defenders to list RBAC resources
@@ -34,7 +29,6 @@ rules:
   - clusterrolebindings
   verbs: 
   - create
-  - delete
 - apiGroups: 
   - rbac.authorization.k8s.io
   resources: 
@@ -45,6 +39,7 @@ rules:
   - twistlock-view-binding
   verbs: 
   - get
+  - delete
 {{- if .Values.defender.monitor_service_accounts }}
 # Allow Defenders to list RBAC resources
 - apiGroups: 
@@ -101,5 +96,6 @@ rules:
   - pods 
   verbs: 
   - get
+{{- end}}
 {{- end}}
 {{- end}}

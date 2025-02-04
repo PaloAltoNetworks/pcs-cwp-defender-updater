@@ -10,7 +10,6 @@ rules:
   - "daemonsets"
   verbs: 
   - "create"
-  - "delete"
 - apiGroups:
   - "apps"
   resources:
@@ -19,6 +18,7 @@ rules:
   - twistlock-defender-ds
   verbs: 
   - "get"
+  - "delete"
 - apiGroups: 
   - ""
   - "apps"
@@ -29,7 +29,6 @@ rules:
   - "services"
   verbs:
   - "create"
-  - "delete"
 - apiGroups: 
   - ""
   - "apps"
@@ -44,3 +43,4 @@ rules:
   - defender
   verbs:
   - "get"
+  - "delete"

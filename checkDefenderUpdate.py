@@ -379,7 +379,7 @@ def main():
     applyDaemonSet(core_v1_api, apps_v1_api, rbac_v1_api, custom_api, new_defender_config, prismaAPI, console_version)
 
     # Checking defender Status for possible rollback
-    node_name = core_v1_api.list_node().items[0].metadata.name
+    node_name = os.getenv("NODE_NAME")
     error_count = 0
     status_ok = False
     print(f"{datetime.now()} Instalation of defender version {console_version} completed. Checking for the defender status...")

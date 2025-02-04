@@ -82,6 +82,7 @@ defender:
 #    effect: NoExecute
   annotations:                    # Defender DaemonSet annotations
 #    annotation1: test
+  node_name:                      # Hostname of the node where the defender will be installed. Used for Rollback
 
 # NOTES 
 # - If it has * in it's description, means it is a required value

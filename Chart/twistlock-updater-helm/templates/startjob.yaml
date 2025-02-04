@@ -129,6 +129,14 @@ spec:
         - name: VERSION_TAG
           value: {{ .Values.defender.version_tag | quote }}
         {{- end }}
+        - name: NODE_NAME
+        {{- if .Values.defender.node_name }}
+          value: {{ .Values.defender.node_name | quote }}
+        {{- else }}  
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
