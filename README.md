@@ -212,8 +212,7 @@ But if you are using **EKS**, **AKS** or **GKE** this value is **not** required.
 
 #### **Use Cases**
 
-* **OpenShift** 
-  For OpenShift cluster please add the following values:
+* **OpenShift**: For OpenShift cluster please add the following values:
 
 ```yaml
 defender:
@@ -222,24 +221,21 @@ defender:
   selinux: true
 ```
 
-* **StartJob**
-  By default it creates a Job to install the defender when executing a `helm install` or `helm upgrade`. If you want to disable this behavior, set the value *job.start_now* to *false* as follows:
+* **StartJob**: By default it creates a Job to install the defender when executing a `helm install` or `helm upgrade`. If you want to disable this behavior, set the value *job.start_now* to *false* as follows:
 
 ```yaml
 job:
   start_now: false
 ```
 
-* **DeleteJob**
-  By default it creates a Job to uninstall the defender when executing a `helm uninstall`. If you want to disable this behavior, set the value *job.delete_all* to *false* as follows:
+* **DeleteJob**: By default it creates a Job to uninstall the defender when executing a `helm uninstall`. If you want to disable this behavior, set the value *job.delete_all* to *false* as follows:
 
 ```yaml
 job:
   delete_all: false
 ```
 
-* **Disable CronJob**
-  If you want to disable the CronJob creation, then set the value *job.cronjob_enabled* to *false* as follows:
+* **Disable CronJob**: If you want to disable the CronJob creation, then set the value *job.cronjob_enabled* to *false* as follows:
 
 ```yaml
 job:
