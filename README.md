@@ -14,7 +14,6 @@ Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a 
 >
 > * This process was tested on GCP Artifact Registry and Azure Container Registry.
 > * If you are using the public helm chart, **update to the latest version and include the file prismaapi.py** in the build phase of your image, which is not requiring persistant volume to execute rollback.
->   `<br></br>`
 
 ## Pre-requisites
 
@@ -126,7 +125,7 @@ helm install external-secrets external-secrets/external-secrets -n external-secr
 
 ```yaml
 compute:
-  secret_store:                             
+  secret_store:                           
     kind: SecretStore
 
 job:
@@ -213,7 +212,7 @@ But if you are using **EKS**, **AKS** or **GKE** this value is **not** required.
 
 #### **Use Cases**
 
-* **OpenShift** `<br>`
+* **OpenShift** 
   For OpenShift cluster please add the following values:
 
 ```yaml
@@ -223,7 +222,7 @@ defender:
   selinux: true
 ```
 
-* **StartJob** `<br>`
+* **StartJob**
   By default it creates a Job to install the defender when executing a `helm install` or `helm upgrade`. If you want to disable this behavior, set the value *job.start_now* to *false* as follows:
 
 ```yaml
@@ -231,7 +230,7 @@ job:
   start_now: false
 ```
 
-* **DeleteJob** `<br>`
+* **DeleteJob**
   By default it creates a Job to uninstall the defender when executing a `helm uninstall`. If you want to disable this behavior, set the value *job.delete_all* to *false* as follows:
 
 ```yaml
@@ -239,7 +238,7 @@ job:
   delete_all: false
 ```
 
-* **Disable CronJob** `<br>`
+* **Disable CronJob**
   If you want to disable the CronJob creation, then set the value *job.cronjob_enabled* to *false* as follows:
 
 ```yaml
@@ -255,7 +254,7 @@ Once setup your *values.yaml* file, install the helm chart using the following c
 $ helm upgrade --install -n twistlock -f values.yaml --create-namespace --repo https://paloaltonetworks.github.io/pcs-cwp-defender-updater twistlock-updater twistlock-updater
 ```
 
-#### **Troubleshooting** `<br>`
+#### **Troubleshooting**
 
 In case if perfomed the installation via helm and you want to uninstall it but the ``helm uninstall`` fails, run the next commands to delete chart:
 
