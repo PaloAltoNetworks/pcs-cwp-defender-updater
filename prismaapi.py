@@ -1,13 +1,34 @@
 import json
 import sys
+import re
 
 from urllib3 import Timeout, PoolManager
 from time import sleep
 from datetime import datetime
 
+# Petterns of Sensitive data made in the requests
+PATTERNS = [
+    r'[A-Za-z0-9+\/=]{80,}', #Long base64 strings
+    r'[A-Za-z0-9+\/]{27}=', #Secret key pattern
+    r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}' #UUID Pattern   
+]
 
 class RequestError(Exception):
     pass
+
+
+# Function to be used to replace sensitive information delivered through logs
+def replace_sensitive_data(text, placeholder="****"):
+    """Replace Senitive date to be output"""
+
+    for pattern in PATTERNS:
+        results = re.findall(pattern, text)
+        if results:
+            for result in results:
+                new_string = f"{result[:4]}{placeholder}"
+                text = text.replace(result, new_string)
+
+    return text
 
 
 class PrismaAPI(object):
@@ -97,10 +118,13 @@ class PrismaAPI(object):
             sleep(self.time_sleep)
             return self.http_request(api_endpoint, path, body, method, skip_error)
 
-        if not skip_error:
-            raise RequestError(f"{datetime.now()} Error making request to {api_endpoint}{path}. Method: {method}. Body: {body}. Error message: {response.data}. Status code: {response.status}")
+        # Error Message
+        msg = f"{datetime.now()} Error making request to {api_endpoint}{path}. Method: {method}. Body: {body}. Error message: {response.data}. Status code: {response.status}"
         
-        if self.debug: print(f"{datetime.now()} Error making request to {api_endpoint}{path}. Method: {method}. Body: {body}. Error message: {response.data}. Status code: {response.status}")
+        if not skip_error:
+            raise RequestError(replace_sensitive_data(msg))
+        
+        if self.debug: print(replace_sensitive_data(msg))
         return "{}"
 
 

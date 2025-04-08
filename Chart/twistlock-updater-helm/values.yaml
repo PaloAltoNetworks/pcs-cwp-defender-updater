@@ -26,7 +26,7 @@ job:
     kind: ClusterSecretStore      # Secrets Store kind
     refresh_interval: 1h          # Secrets refresh interval
     remote_key:                   # Remote secret name
-  role_arn:                       # AWS role ARN for CronJob
+  role_arn:                       # AWS role ARN for CronJob and Job
   storage:                        # Storage settings for backups. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
     size: 1Gi                     # Storage size for CronJob to write backup
   debug: false                    # Print extended output of the CronJob
@@ -39,6 +39,11 @@ job:
   failed_cronjobs: 1              # Amount of failed CronJobs to be kept. If set to 0, none failed CronJobs will be kept.
   node_selector:                  # Node Selector for executed Jobs
 #    key: value
+  service_account:
+    name: twistlock-updater-service # Name of the service account to be used
+    annotations:                    # Additional annotations besides role_arn for AWS
+#      key: value
+
 
 defender:
   version_tag:                    # Prisma Cloud tag used to determine the defender version to be installed
@@ -81,7 +86,7 @@ defender:
 #  - operator: Exists
 #    effect: NoExecute
   annotations:                    # Defender DaemonSet annotations
-#    annotation1: test
+#    key: value
   node_name:                      # Hostname of the node where the defender will be installed. Used for Rollback
 
 # NOTES 
