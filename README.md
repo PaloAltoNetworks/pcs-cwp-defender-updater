@@ -1,4 +1,4 @@
-# Prisma Cloud DeamonSet Defender Auto Updater (Beta)
+# Prisma Cloud DeamonSet Defender Auto Updater (Community)
 
 Kubernetes CronJob to update automatically Prisma Cloud defender DaemonSet in a Kubernetes cluster or OpenShift cluster.
 
