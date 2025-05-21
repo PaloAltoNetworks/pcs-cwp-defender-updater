@@ -111,10 +111,30 @@ spec:
           value: {{ .Values.defender.selinux | quote }}
         - name: PRIVILEGED
           value: {{ .Values.defender.privileged | quote }}
+        {{- if .Values.defender.cpu_limit }}
         - name: CPU_LIMIT
           value: {{ .Values.defender.cpu_limit | quote }}
+        {{- end }}
+        {{- if .Values.defender.memory_limit }}
         - name: MEMORY_LIMIT
           value: {{ .Values.defender.memory_limit | quote }}
+        {{- end }}
+        {{- if .Values.defender.ephemeral_storage_limit }}
+        - name: EPHEMERAL_STORAGE_LIMIT
+          value: {{ .Values.defender.ephemeral_storage_limit | quote }}
+        {{- end }}
+        {{- if .Values.defender.cpu_request }}
+        - name: CPU_REQUEST
+          value: {{ .Values.defender.cpu_request | quote }}
+        {{- end }}
+        {{- if .Values.defender.memory_request }}
+        - name: MEMORY_REQUEST
+          value: {{ .Values.defender.memory_request | quote }}
+        {{- end }}
+        {{- if .Values.defender.ephemeral_storage_request }}
+        - name: EPHEMERAL_STORAGE_REQUEST
+          value: {{ .Values.defender.ephemeral_storage_request | quote }}
+        {{- end }}
         - name: PRIORITY_CLASS_NAME
           value: {{ .Values.defender.priority_class_name | quote }}
         - name: PROJECT_ID

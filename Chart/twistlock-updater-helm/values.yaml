@@ -6,6 +6,7 @@ compute:
   secret_store:                   # Integrate with External Secrets Operator 
     name:                         # Name of the Secrets Store where the Access to Prisma is located
     kind: ClusterSecretStore      # Secrets Store kind
+    api_version: external-secrets.io/v1beta1 # External Secrets API version
     refresh_interval: 1h          # Secrets refresh interval
     remote_key:                   # Remote secret name
  
@@ -24,6 +25,7 @@ job:
   secret_store:                   # Integrate with External Secrets Operator
     name:                         # Name of the Secrets Store
     kind: ClusterSecretStore      # Secrets Store kind
+    api_version: external-secrets.io/v1beta1 # External Secrets API version
     refresh_interval: 1h          # Secrets refresh interval
     remote_key:                   # Remote secret name
   role_arn:                       # AWS role ARN for CronJob and Job
@@ -67,8 +69,12 @@ defender:
   image_pull_secret: ""           # Secret for pulling the defender image
   selinux: false                  # Deployment made using SELinux Policies
   privileged: false               # Set DaemonSet Pods as Privileged 
-  cpu_limit: 0                    # Sets the limit of Defender CPU usage
-  memory_limit: 0                 # Sets the limit of Defender Memory usage
+  cpu_limit:                      # Sets the limit of Defender CPU usage. If not set it will take the default value of 900m
+  memory_limit:                   # Sets the limit of Defender Memory usage. If not set it will take the default value of 512Mi
+  ephemeral_storage_limit:        # Sets the limit of Defender Ephemeral Storage. No default value
+  cpu_request:                    # Sets the request of Defender CPU. If not set it will take the default value of 256m
+  memory_request:                 # Sets the request of Defender Memory. No default value
+  ephemeral_storage_request:      # Sets the request of Defender Ephemeral Storage. No default value
   priority_class_name: ""         # Name of the PriorityClass. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
   project_id: ""                  # Project ID where the Defender is going to point to. Used for self-hosted only.
   region: ""                      # Cloud region where the cluster is localed

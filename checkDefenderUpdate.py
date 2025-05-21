@@ -49,8 +49,12 @@ IMAGE_NAME = os.getenv("IMAGE_NAME", "")
 IMAGE_PULL_SECRET = os.getenv("IMAGE_PULL_SECRET", "")
 SELINUX = os.getenv("SELINUX", "false").lower() in ["true", "1", "y"]
 PRIVILEGED = os.getenv("PRIVILEGED", "false").lower() in ["true", "1", "y"]
-CPU_LIMIT = int(os.getenv("CPU_LIMIT", "0"))
-MEMORY_LIMIT = int(os.getenv("MEMORY_LIMIT", "0"))
+CPU_LIMIT = os.getenv("CPU_LIMIT", "")
+MEMORY_LIMIT = os.getenv("MEMORY_LIMIT", "")
+EPHEMERAL_STORAGE_LIMIT = os.getenv("EPHEMERAL_STORAGE_LIMIT", "")
+CPU_REQUEST = os.getenv("CPU_REQUEST", "")
+MEMORY_REQUEST = os.getenv("MEMORY_REQUEST", "")
+EPHEMERAL_STORAGE_REQUEST = os.getenv("EPHEMERAL_STORAGE_REQUEST", "")
 PRIOROTY_CLASS_NAME = os.getenv("PRIOROTY_CLASS_NAME", "")
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
@@ -237,6 +241,13 @@ def applyYAML(core_v1_api: CoreV1Api, apps_v1_api: AppsV1Api, rbac_v1_api: RbacA
                     if version and not IMAGE_NAME:
                         image = re.sub(VERSION_REGEX, version.replace(".", "_"), resource["spec"]["template"]["spec"]["containers"][0]["image"])
                         resource["spec"]["template"]["spec"]["containers"][0]["image"] = image
+                    
+                    if CPU_REQUEST: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]["cpu"] = CPU_REQUEST
+                    if MEMORY_REQUEST: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]["memory"] = MEMORY_REQUEST
+                    if EPHEMERAL_STORAGE_REQUEST: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]["ephemeral-storage"] = EPHEMERAL_STORAGE_REQUEST
+                    if CPU_LIMIT: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["cpu"] = CPU_LIMIT
+                    if MEMORY_LIMIT: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["memory"] = MEMORY_LIMIT
+                    if EPHEMERAL_STORAGE_LIMIT: resource["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["ephemeral-storage"] = EPHEMERAL_STORAGE_LIMIT
 
                     createK8SResource(apps_v1_api.create_namespaced_daemon_set, resource, NAMESPACE)
                 elif kind == "Service": createK8SResource(core_v1_api.create_namespaced_service, resource, NAMESPACE)
@@ -301,12 +312,10 @@ def main():
         "collectPodLabels": COLLECT_POD_LABELS,
         "consoleAddr": console_name,
         "containerRuntime": CONTAINER_RUNTIME,
-        "cpuLimit": CPU_LIMIT,
         "dockerSocketPath": RUNTIME_SOCKET_PATH,
         "gkeAutopilot": GKE_AUTOPILOT,
         "image": IMAGE_NAME,
         "istio": MONITOR_ISTIO,
-        "memoryLimit": MEMORY_LIMIT,
         "namespace": NAMESPACE,
         "nodeSelector": NODE_SELECTOR,
         "orchestration": ORCHESTRATOR,
