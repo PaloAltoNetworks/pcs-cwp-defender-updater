@@ -30,20 +30,7 @@ data:
   {{- end }}
   {{- if .Values.defender.tolerations }} 
     tolerations:
-    {{- range $toleration := .Values.defender.tolerations }}
-      {{- if and $toleration.effect $toleration.operator $toleration.key}}
-    - effect: {{ $toleration.effect }}
-      key: {{ $toleration.key }}
-      operator: {{ $toleration.operator }}
-      {{- if $toleration.toleration_seconds }}
-      toleration_seconds: {{ $toleration.toleration_seconds }}
-      {{- end }}
-      {{- if $toleration.value }}
-      value: {{ $toleration.value }}
-      {{- end }}
-      {{- end }}
-    {{- end }}
-  {{- end}}   
-
+{{ toYaml .Values.defender.tolerations | indent 4 }}
+  {{- end}}
 {{- end}}
 
