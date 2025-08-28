@@ -42,7 +42,6 @@ jobs:
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
         ./cortexcli --version
-        - name: Run Cortex CLI Code Scan
 
     - name: Run Cortex CLI Code Scan
       run: |
