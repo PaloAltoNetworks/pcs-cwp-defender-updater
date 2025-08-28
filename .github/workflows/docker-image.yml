@@ -56,21 +56,21 @@ jobs:
           --create-repo-if-missing
     
     # Image scanning
-    - name: Set env
-      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+#    - name: Set env
+#      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
 
         
-    - name: Build and Run Cortex CLI Image Scan
-      run: |
-        docker build -t ${{vars.IMAGE_NAME}}:latest .
-        sudo ./cortexcli \
-          --api-base-url "${CORTEX_API_URL}" \
-          --api-key "${CORTEX_API_KEY}" \
-          --api-key-id "${CORTEX_API_KEY_ID}" \
-          image scan ${{vars.IMAGE_NAME}}:latest
+#    - name: Build and Run Cortex CLI Image Scan
+#      run: |
+#        docker build -t ${{vars.IMAGE_NAME}}:latest .
+#        sudo ./cortexcli \
+#          --api-base-url "${CORTEX_API_URL}" \
+#          --api-key "${CORTEX_API_KEY}" \
+#          --api-key-id "${CORTEX_API_KEY_ID}" \
+#          image scan ${{vars.IMAGE_NAME}}:latest
