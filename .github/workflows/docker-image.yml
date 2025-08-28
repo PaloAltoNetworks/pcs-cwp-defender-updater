@@ -74,6 +74,4 @@ jobs:
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
-          --ci-pipeline-id "${{github.repository}}" \
-          --build-id "${{github.job}}" \
           image scan ${{vars.IMAGE_NAME}}:latest
