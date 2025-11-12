@@ -67,14 +67,14 @@ jobs:
     - name: Build and Run Cortex CLI Image Scan
       run: |
         docker build -t ${{vars.IMAGE_NAME}}:latest .
-        sudo ./cortexcli \
+        ./cortexcli \
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
-          --soft-fail \ 
+          --soft-fail \
           image scan \
-          --timeout 360 \
-          --name ${{vars.IMAGE_NAME}}:latest \ 
-          ${{vars.IMAGE_NAME}}:latest 
-        
+          --timeout 600 \
+          --name ${{vars.IMAGE_NAME}}:latest \
+          ${{vars.IMAGE_NAME}}:latest
+
         cat .cortexcli/logs/cortexcli-*.log | grep ERROR
