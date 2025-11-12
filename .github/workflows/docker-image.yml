@@ -67,7 +67,7 @@ jobs:
     - name: Build and Run Cortex CLI Image Scan
       run: |
         docker build -t ${{vars.IMAGE_NAME}}:latest .
-        ./cortexcli \
+        sudo ./cortexcli \
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
