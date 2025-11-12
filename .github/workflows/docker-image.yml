@@ -22,7 +22,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5
 
-    # checkov:skip=CKV_GHA_3: No secrets exposed
     # AppSec Code Scanning
     - name: Set up Node.js
       uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
@@ -43,19 +42,20 @@ jobs:
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
         ./cortexcli --version
-
-#    - name: Run Cortex CLI Code Scan
-#      run: |
-#        ./cortexcli \
-#          --api-base-url "${CORTEX_API_URL}" \
-#          --api-key "${CORTEX_API_KEY}" \
-#          --api-key-id "${CORTEX_API_KEY_ID}" \
-#          code scan \
-#          --directory "${{github.workspace}}" \
-#          --repo-id "${{github.repository}}" \
-#          --branch "${{github.ref_name}}" \
-#          --source "GITHUB_ACTIONS" \
-#          --create-repo-if-missing
+    
+    # Do Code Scanning
+    - name: Run Cortex CLI Code Scan
+      run: |
+        ./cortexcli \
+          --api-base-url "${CORTEX_API_URL}" \
+          --api-key "${CORTEX_API_KEY}" \
+          --api-key-id "${CORTEX_API_KEY_ID}" \
+          code scan \
+          --directory "${{github.workspace}}" \
+          --repo-id "${{github.repository}}" \
+          --branch "${{github.ref_name}}" \
+          --source "GITHUB_ACTIONS" \
+          --create-repo-if-missing
 
     # Do image scanning
     - name: Set up QEMU
@@ -77,5 +77,6 @@ jobs:
           --name ${{vars.IMAGE_NAME}}:latest \
           ${{vars.IMAGE_NAME}}:latest
 
+    # Output any error found
     - name: Check CortexCLI Error logs
-      run: cat $HOME/.cortexcli/logs/cortexcli-*.log 
+      run: cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR"
