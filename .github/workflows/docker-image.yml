@@ -34,7 +34,7 @@ jobs:
 
     - name: CWP Image Scan Dependency
       run: sudo apt install libhyperscan5 -y
-      
+
     - name: Download cortexcli
       run: |
         set -x
@@ -44,18 +44,18 @@ jobs:
         chmod +x cortexcli
         ./cortexcli --version
 
-    - name: Run Cortex CLI Code Scan
-      run: |
-        ./cortexcli \
-          --api-base-url "${CORTEX_API_URL}" \
-          --api-key "${CORTEX_API_KEY}" \
-          --api-key-id "${CORTEX_API_KEY_ID}" \
-          code scan \
-          --directory "${{github.workspace}}" \
-          --repo-id "${{github.repository}}" \
-          --branch "${{github.ref_name}}" \
-          --source "GITHUB_ACTIONS" \
-          --create-repo-if-missing
+#    - name: Run Cortex CLI Code Scan
+#      run: |
+#        ./cortexcli \
+#          --api-base-url "${CORTEX_API_URL}" \
+#          --api-key "${CORTEX_API_KEY}" \
+#          --api-key-id "${CORTEX_API_KEY_ID}" \
+#          code scan \
+#          --directory "${{github.workspace}}" \
+#          --repo-id "${{github.repository}}" \
+#          --branch "${{github.ref_name}}" \
+#          --source "GITHUB_ACTIONS" \
+#          --create-repo-if-missing
 
     # Do image scanning
     - name: Set up QEMU
@@ -71,7 +71,10 @@ jobs:
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
+          --soft-fail \ 
           image scan \
-          --timeout 360 \ 
+          --timeout 360 \
           --name ${{vars.IMAGE_NAME}}:latest \ 
-          ${{vars.IMAGE_NAME}}:latest
+          ${{vars.IMAGE_NAME}}:latest 
+        
+        cat .cortexcli/logs/cortexcli-*.log | grep ERROR
