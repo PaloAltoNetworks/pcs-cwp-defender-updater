@@ -77,4 +77,5 @@ jobs:
           --name ${{vars.IMAGE_NAME}}:latest \
           ${{vars.IMAGE_NAME}}:latest
 
-        cat .cortexcli/logs/cortexcli-*.log | grep ERROR
+    - name: Check CortexCLI Error logs
+      run: cat $HOME/.cortexcli/logs/cortexcli-*.log 
