@@ -58,4 +58,4 @@ jobs:
 
     # Output any error found
     - name: Check CortexCLI Error logs
-      run: cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR"
+      run: cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
