@@ -33,7 +33,29 @@ jobs:
         chmod +x cortexcli
         ./cortexcli --version
 
-    # Do image scanning
+    # Do AppSec Code Scanning
+    - name: Set up Node.js
+      uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
+      with:
+        node-version: 22
+
+    - name: Verify Node.js Version
+      run: node -v
+      
+    - name: Run Cortex CLI Code Scan
+      run: |
+        ./cortexcli \
+          --api-base-url "${CORTEX_API_URL}" \
+          --api-key "${CORTEX_API_KEY}" \
+          --api-key-id "${CORTEX_API_KEY_ID}" \
+          code scan \
+          --directory "${{github.workspace}}" \
+          --repo-id "${{github.repository}}" \
+          --branch "${{github.ref_name}}" \
+          --source "GITHUB_ACTIONS" \
+          --create-repo-if-missing
+
+    # Do CWP image scanning
     - name: CWP Image Scan Dependency
       run: sudo apt install libhyperscan5 -y
       
