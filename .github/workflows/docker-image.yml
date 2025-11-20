@@ -42,15 +42,10 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
 
-    - name: Build Docker image
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
-      with:
-        push: false
-        tags: ${{ env.IMAGE_NAME }}
-
-    - name: Check Image in Cortex Cloud
+    - name: Build and Check Image in Cortex Cloud
       id: check_image
       run: |
+        docker build -t $IMAGE_NAME .
         image_id=$(docker inspect $IMAGE_NAME --format='{{.Id}}')
         echo "Searching if the image $IMAGE_NAME exists in Cortex Cloud. Digest: $image_id..."
         asset_info=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/assets" -d '
