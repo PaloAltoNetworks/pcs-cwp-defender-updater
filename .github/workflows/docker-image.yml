@@ -74,17 +74,15 @@ jobs:
     - name: Cortex CLI Image Scan
       if: ${{ steps.check_image.outputs.image_found == 'false' }}
       run: |
-        image_id=$(sudo ./cortexcli \
+        sudo ./cortexcli \
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
           --soft-fail \
           image scan \
           --timeout 600 \
-          --output-format json \
           --name $IMAGE_NAME \
-          $IMAGE_NAME | grep -oP '(?<="image_id":")[^"]*')
-        echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
+          $IMAGE_NAME
 
     # Output any error found
     - name: Check CortexCLI Error and Wait for results
