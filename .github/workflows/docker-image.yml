@@ -73,7 +73,7 @@ jobs:
         start_response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/xql/start_xql_query" -d '
             {
                 "request_data": {
-                    "query": "dataset = uvm_findings | filter asset_name = \"'$IMAGE_ID'\" | dedup vulnerability_id, package_purl"
+                    "query": "dataset = findings | filter xdm.finding.asset_name = \"'$IMAGE_ID'\""
                 }
             }')
         query_id=$(echo "$start_response" | jq -r '.reply')
@@ -102,7 +102,7 @@ jobs:
                         "format": "json"
                     }
                 }')
-            status=$(echo "$results_response" | jq -r '.reply.status')
+            status=$(echo "$results_response" | jq . )
             sleep 10
         done
 
