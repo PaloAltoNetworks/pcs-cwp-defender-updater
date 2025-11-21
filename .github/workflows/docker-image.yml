@@ -102,12 +102,12 @@ jobs:
                         "format": "json"
                     }
                 }')
-            status=$(echo "$results_response" | jq . )
+            status=$(echo "$results_response" | jq -r '.reply.status' )
             sleep 10
         done
 
         echo "Retrieve results status: $status"
         # Print the full response for troubleshooting
         if [[ "$status" == "SUCCESS" ]]; then
-          echo "$results_response" | jq '.reply.results.data'
+          echo "$results_response" | jq .
         fi
