@@ -18,6 +18,7 @@ jobs:
       CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
       WAIT: ${{ vars.WAIT || 600 }}
       IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
+      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'results.json' }}
 
     steps:
     # Initial Setup
@@ -109,5 +110,10 @@ jobs:
         echo "Retrieve results status: $status"
         # Print the full response for troubleshooting
         if [[ "$status" == "SUCCESS" ]]; then
-          echo "$results_response" | jq '.reply.results.data'
+          echo "$results_response" | jq '.reply.results.data' | jq 'map(.image_name = "'$IMAGE_NAME'")' > $OUTPUT_FILE
         fi
+
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      with:
+        name: results
+        path: ${{ env.OUTPUT_FILE }}
