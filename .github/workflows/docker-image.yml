@@ -11,14 +11,13 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    environment: Cortex
     env:
       CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
       CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
       CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
       WAIT: ${{ vars.WAIT || 600 }}
       IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
-      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'results.json' }}
+      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'image-results.json' }}
 
     steps:
     # Initial Setup
@@ -32,7 +31,35 @@ jobs:
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
         ./cortexcli --version
+    # Do AppSec Code Scanning
+    - name: Set up Node.js
+      uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
+      with:
+        node-version: 22
 
+    - name: Verify Node.js Version
+      run: node -v
+      
+    - name: Run Cortex CLI Code Scan
+      run: |
+        ./cortexcli \
+          --api-base-url "${CORTEX_API_URL}" \
+          --api-key "${CORTEX_API_KEY}" \
+          --api-key-id "${CORTEX_API_KEY_ID}" \
+          code scan \
+          --directory "${{github.workspace}}" \
+          --repo-id "${{github.repository}}" \
+          --branch "${{github.ref_name}}" \
+          --source "GITHUB_ACTIONS" \
+          --create-repo-if-missing \
+          --output json \
+          --output-file code-results.json
+    
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      with:
+        name: code-results
+        path: code-results.json
+  
     # Do CWP image scanning
     - name: CWP Image Scan Dependency
       run: sudo apt install libhyperscan5 jq -y
@@ -49,6 +76,7 @@ jobs:
         image_id=$(docker inspect $IMAGE_NAME --format='{{.Id}}')
         echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
 
+        
     - name: Cortex CLI Image Scan
       run: |
         sudo ./cortexcli \
@@ -115,5 +143,5 @@ jobs:
 
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
-        name: results
+        name: imagescan-results
         path: ${{ env.OUTPUT_FILE }}
