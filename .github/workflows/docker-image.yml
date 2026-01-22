@@ -54,7 +54,7 @@ jobs:
           --source "GITHUB_ACTIONS" \
           --create-repo-if-missing \
           --output json \
-          --output-file code-results.json
+          --output-file-path code-results.json
     
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
