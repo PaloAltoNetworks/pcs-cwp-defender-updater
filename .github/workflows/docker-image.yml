@@ -16,9 +16,9 @@ jobs:
       CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
       CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
       CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
-      WAIT: ${{ vars.WAIT || 600 }}
+      WAIT: ${{ vars.WAIT || 900 }}
       IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
-      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'image-results.json' }}
+      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'scan-results.json' }}
 
     steps:
     # Initial Setup
@@ -32,6 +32,7 @@ jobs:
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
         ./cortexcli --version
+        
     # Do AppSec Code Scanning
     - name: Set up Node.js
       uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
@@ -54,12 +55,12 @@ jobs:
           --source "GITHUB_ACTIONS" \
           --create-repo-if-missing \
           --output json \
-          --output-file-path code-results.json
+          --output-file-path "appsec-${{ env.OUTPUT_FILE }}"
     
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
         name: code-results
-        path: code-results.json
+        path: "appsec-${{ env.OUTPUT_FILE }}"
   
     # Do CWP image scanning
     - name: CWP Image Scan Dependency
@@ -103,12 +104,12 @@ jobs:
         start_response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/xql/start_xql_query" -d '
             {
                 "request_data": {
-                    "query": "dataset = uvm_findings | filter asset_name = \"'$IMAGE_ID'\""
+                    "query": "dataset = findings | filter xdm.finding.asset_name = \"'$IMAGE_ID'\""
                 }
             }')
         query_id=$(echo "$start_response" | jq -r '.reply')
 
-        if [[ "$query_id" == "null" || -z "$query_id" ]]; then
+        if [[ "$query_id" != *"_inv" ]]; then
             echo "❌ Failed to start XQL query. Response details:"
             echo "$start_response"
             exit 1
@@ -139,10 +140,10 @@ jobs:
         echo "Retrieve results status: $status"
         # Print the full response for troubleshooting
         if [[ "$status" == "SUCCESS" ]]; then
-          echo "$results_response" | jq '.reply.results.data' | jq 'map(.image_name = "'$IMAGE_NAME'")' > $OUTPUT_FILE
+          echo "$results_response" | jq '.reply.results.data' | jq 'map(.image_name = "'$IMAGE_NAME'")' > "image-${{ env.OUTPUT_FILE }}"
         fi
 
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
-        name: imagescan-results
-        path: ${{ env.OUTPUT_FILE }}
+        name: image-scan-results
+        path: "image-${{ env.OUTPUT_FILE }}"
