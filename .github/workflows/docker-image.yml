@@ -59,7 +59,7 @@ jobs:
     
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
-        name: code-results
+        name: appsec-scan-results
         path: "appsec-${{ env.OUTPUT_FILE }}"
   
     # Do CWP image scanning
@@ -81,7 +81,7 @@ jobs:
         
     - name: Cortex CLI Image Scan
       run: |
-        sudo ./cortexcli \
+        results=$(sudo ./cortexcli \
           --api-base-url "${CORTEX_API_URL}" \
           --api-key "${CORTEX_API_KEY}" \
           --api-key-id "${CORTEX_API_KEY_ID}" \
@@ -89,7 +89,18 @@ jobs:
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
-          $IMAGE_NAME
+          --output-format json \
+          $IMAGE_NAME)
+        image_id="$(echo $results | grep -oP '(?<="image_id":")[^"]*')"
+
+        if [[ -z "$image_id" ]]; then
+            echo "❌ Failed to get results from CortexCLI"
+            cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
+            exit 1
+        fi
+        echo "CortexCLI scan completed successfully. Image ID: ${image_id}"
+        echo "$results" | jq '.'
+        echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
 
     - name: Check CortexCLI Error and Wait for results
       run: | 
@@ -143,6 +154,7 @@ jobs:
           echo "$results_response" | jq '.reply.results.data' | jq 'map(.image_name = "'$IMAGE_NAME'")' > "image-${{ env.OUTPUT_FILE }}"
         fi
 
+    
     - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
         name: image-scan-results
