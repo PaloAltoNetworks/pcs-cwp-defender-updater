@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     
 jobs:
-  docker:
+  cortexcli:
     runs-on: ubuntu-latest
     environment: Cortex
     env:
@@ -102,10 +102,8 @@ jobs:
         echo "$results" | jq '.'
         echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
 
-    - name: Check CortexCLI Error and Wait for results
+    - name: Wait for results
       run: | 
-        echo "Errors:"
-        cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
         echo "Waiting for Cortex to process image $IMAGE_NAME. Image Id: ${IMAGE_ID}"
         sleep ${WAIT}
 
