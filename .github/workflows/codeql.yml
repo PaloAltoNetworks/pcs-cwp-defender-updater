@@ -104,6 +104,6 @@ jobs:
     - name: Upload SARIF as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: CodeQL-SARIF-results # Name for your artifact
+        name: "CodeQL-${{ matrix.language }}-results" # Name for your artifact
         path: ${{ steps.analyze.outputs.sarif-output }} # Path to the generated SARIF file
         retention-days: 5 # Optional: how long to keep the artifact
