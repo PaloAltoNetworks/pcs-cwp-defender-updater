@@ -1,2 +1,2 @@
-urllib3==2.4.0
+urllib3==2.6.3
 kubernetes==32.0.1
