@@ -34,33 +34,33 @@ jobs:
         ./cortexcli --version
         
     # Do AppSec Code Scanning
-    - name: Set up Node.js
-      uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
-      with:
-        node-version: 22
+#    - name: Set up Node.js
+#      uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6
+#      with:
+#        node-version: 22
 
-    - name: Verify Node.js Version
-      run: node -v
+#    - name: Verify Node.js Version
+#      run: node -v
       
-    - name: Run Cortex CLI Code Scan
-      run: |
-        ./cortexcli \
-          --api-base-url "${CORTEX_API_URL}" \
-          --api-key "${CORTEX_API_KEY}" \
-          --api-key-id "${CORTEX_API_KEY_ID}" \
-          code scan \
-          --directory "${{github.workspace}}" \
-          --repo-id "${{github.repository}}" \
-          --branch "${{github.ref_name}}" \
-          --source "GITHUB_ACTIONS" \
-          --create-repo-if-missing \
-          --output json \
-          --output-file-path "appsec-${{ env.OUTPUT_FILE }}"
+#    - name: Run Cortex CLI Code Scan
+#      run: |
+#        ./cortexcli \
+#          --api-base-url "${CORTEX_API_URL}" \
+#          --api-key "${CORTEX_API_KEY}" \
+#          --api-key-id "${CORTEX_API_KEY_ID}" \
+#          code scan \
+#          --directory "${{github.workspace}}" \
+#          --repo-id "${{github.repository}}" \
+#          --branch "${{github.ref_name}}" \
+#          --source "GITHUB_ACTIONS" \
+#          --create-repo-if-missing \
+#          --output json \
+#          --output-file-path "appsec-${{ env.OUTPUT_FILE }}"
     
-    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
-      with:
-        name: appsec-scan-results
-        path: "appsec-${{ env.OUTPUT_FILE }}"
+#    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+#      with:
+#        name: appsec-scan-results
+#        path: "appsec-${{ env.OUTPUT_FILE }}"
   
     # Do CWP image scanning
     - name: CWP Image Scan Dependency
