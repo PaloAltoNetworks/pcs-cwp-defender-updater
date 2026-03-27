@@ -113,7 +113,10 @@ jobs:
         start_response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/xql/start_xql_query" -d '
             {
                 "request_data": {
-                    "query": "dataset = findings | filter xdm.finding.asset_name = \"'$IMAGE_ID'\""
+                    "query": "dataset = findings 
+                    | filter xdm.finding.asset_name = \"'$IMAGE_ID'\" 
+                    | alter is_cvss_2 = if(xdm.vulnerability.cvss_vector contains "CVSS" or xdm.vulnerability.cvss_vector = null, false, true)
+                    | alter cvss_severity = if(xdm.vulnerability.cvss_score >= 9.0 and not is_cvss_2, \"CRITICAL\", if(xdm.vulnerability.cvss_score >= 7.0, \"HIGH\", if(xdm.vulnerability.cvss_score >= 4.0, \"MEDIUM\", if(xdm.vulnerability.cvss_score in (0, null) and not is_cvss_2, \"INFO\", \"LOW\"))))"
                 }
             }')
         query_id=$(echo "$start_response" | jq -r '.reply')
