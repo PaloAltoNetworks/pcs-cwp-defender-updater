@@ -2,10 +2,10 @@ name: Image Scan CortexCLI
 
 on:
   push:
-    branches:
-      - cortex-cli
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
-    
+  
 jobs:
   cortexcli:
     permissions:
