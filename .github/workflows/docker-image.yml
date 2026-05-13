@@ -54,13 +54,14 @@ jobs:
           --branch "${{github.ref_name}}" \
           --source "GITHUB_ACTIONS" \
           --create-repo-if-missing \
-          --output sarif \
-          --output-file-path "appsec-${{ env.OUTPUT_FILE }}"
+          --output cli,sarif \
+          --output-file-path "results.sarif"
     
-    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      if: success() || failure()
       with:
-        name: appsec-scan-results
-        path: "appsec-${{ env.OUTPUT_FILE }}"
+        sarif_file: results.sarif
   
     # Do CWP image scanning
     - name: CWP Image Scan Dependency
@@ -80,18 +81,35 @@ jobs:
 
         
     - name: Cortex CLI Image Scan
-      run: |
-        results=$(sudo ./cortexcli \
-          --api-base-url "${CORTEX_API_URL}" \
-          --api-key "${CORTEX_API_KEY}" \
-          --api-key-id "${CORTEX_API_KEY_ID}" \
-          --soft-fail \
-          image scan \
-          --timeout 600 \
-          --name $IMAGE_NAME \
-          --output-format json \
-          $IMAGE_NAME)
-        image_id="$(echo $results | grep -oP '(?<="image_id":")[^"]*')"
+      run: |        
+        cli_version=$(./cortexcli --version | grep -oP '\d+\.\d+\.\d+')
+        if [[ "$(printf '%s\n' "$UPGRADE_VERSION" "$cli_version" | sort -V | head -n1)" == "$UPGRADE_VERSION" ]]; then
+            echo "Using the upgraded version of CortexCLI"
+            results=$(./cortexcli \
+              --api-base-url "${CORTEX_API_URL}" \
+              --api-key "${CORTEX_API_KEY}" \
+              --api-key-id "${CORTEX_API_KEY_ID}" \
+              --soft-fail \
+              image scan \
+              --timeout 600 \
+              --name $IMAGE_NAME \
+              $IMAGE_NAME)
+            image_id="$(echo $results | grep -oP 'config digest: \K[^ ]+')"
+            
+        else
+            echo "⚠️ CortexCLI version is outdated. Please consider upgrading."
+            results=$(sudo ./cortexcli \
+              --api-base-url "${CORTEX_API_URL}" \
+              --api-key "${CORTEX_API_KEY}" \
+              --api-key-id "${CORTEX_API_KEY_ID}" \
+              --soft-fail \
+              image scan \
+              --timeout 600 \
+              --name $IMAGE_NAME \
+              --output-format json \
+              $IMAGE_NAME)
+            image_id="$(echo $results | grep -oP '(?<="image_id":")[^"]*')"
+        fi
 
         if [[ -z "$image_id" ]]; then
             echo "❌ Failed to get results from CortexCLI"
@@ -99,7 +117,7 @@ jobs:
             exit 1
         fi
         echo "CortexCLI scan completed successfully. Image ID: ${image_id}"
-        echo "$results" | jq '.'
+        echo "$results"
         echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
 
     - name: Wait for results
