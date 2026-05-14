@@ -85,8 +85,8 @@ jobs:
             cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
             exit 1
         fi
-        echo "CortexCLI scan completed successfully. Image ID: ${image_id}"
         echo "$results"
+        echo "CortexCLI scan completed successfully. Image ID: ${image_id}"
         echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
 
     - name: Wait for results
