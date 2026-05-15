@@ -15,11 +15,8 @@ jobs:
     env:
       CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
       CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
-      CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
-      WAIT: ${{ vars.WAIT || 900 }}
+      CORTEX_API_BASE_URL: ${{ secrets.CORTEX_API_BASE_URL || secrets.CORTEX_API_URL }}
       IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
-      OUTPUT_FILE: ${{ vars.OUTPUT_FILE || 'scan-results.json' }}
-      UPGRADE_VERSION: "0.31.0"
 
     steps:
     # Initial Setup
@@ -28,7 +25,7 @@ jobs:
 
     - name: Download cortexcli
       run: |
-        crtx_resp=$(curl -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" -H "Authorization: ${CORTEX_API_KEY}" "${CORTEX_API_URL}/public_api/v1/unified-cli/releases/download-link?os=linux&architecture=amd64")
+        crtx_resp=$(curl -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" -H "Authorization: ${CORTEX_API_KEY}" "${CORTEX_API_BASE_URL}/public_api/v1/unified-cli/releases/download-link?os=linux&architecture=amd64")
         crtx_url=$(echo $crtx_resp | jq -r ".signed_url")
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
@@ -50,97 +47,9 @@ jobs:
 
     - name: Cortex CLI Image Scan
       run: |
-        cli_version=$(./cortexcli --version | grep -oP '\d+\.\d+\.\d+')
-
-        if [[ "$(printf '%s\n' "$UPGRADE_VERSION" "$cli_version" | sort -V | head -n1)" == "$UPGRADE_VERSION" ]]; then
-            echo "Using the upgraded version of CortexCLI"
-            results=$(./cortexcli \
-              --api-base-url "${CORTEX_API_URL}" \
-              --api-key "${CORTEX_API_KEY}" \
-              --api-key-id "${CORTEX_API_KEY_ID}" \
-              --soft-fail \
-              image scan \
-              --timeout 600 \
-              --name $IMAGE_NAME \
-              $IMAGE_NAME)
-            image_id="$(echo $results | grep -oP 'config digest: \K[^ ]+')"
-            
-        else
-            echo "⚠️ CortexCLI version is outdated. Please consider upgrading."
-            results=$(sudo ./cortexcli \
-              --api-base-url "${CORTEX_API_URL}" \
-              --api-key "${CORTEX_API_KEY}" \
-              --api-key-id "${CORTEX_API_KEY_ID}" \
-              --soft-fail \
-              image scan \
-              --timeout 600 \
-              --name $IMAGE_NAME \
-              --output-format json \
-              $IMAGE_NAME)
-            image_id="$(echo $results | grep -oP '(?<="image_id":")[^"]*')"
-        fi
-
-        if [[ -z "$image_id" ]]; then
-            echo "❌ Failed to get results from CortexCLI"
-            cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
-            exit 1
-        fi
-        echo "$results"
-        echo "CortexCLI scan completed successfully. Image ID: ${image_id}"
-        echo "IMAGE_ID=$image_id" >> $GITHUB_ENV
-
-    - name: Wait for results
-      run: | 
-        echo "Waiting for Cortex to process image $IMAGE_NAME. Image Id: ${IMAGE_ID}"
-        sleep ${WAIT}
-
-    - name: Get Results
-      run : |
-        echo "Obtaining findings of image: $IMAGE_NAME. Image Id: $IMAGE_ID"
-        start_response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/xql/start_xql_query" -d '
-            {
-                "request_data": {
-                    "query": "dataset = findings | filter xdm.finding.asset_name = \"'$IMAGE_ID'\" | alter is_cvss_2 = if(xdm.vulnerability.cvss_vector contains \"CVSS\" or xdm.vulnerability.cvss_vector = null, false, true) | alter cvss_severity = if(xdm.vulnerability.cvss_score >= 9.0 and not is_cvss_2, \"CRITICAL\", if(xdm.vulnerability.cvss_score >= 7.0, \"HIGH\", if(xdm.vulnerability.cvss_score >= 4.0, \"MEDIUM\", if(xdm.vulnerability.cvss_score in (0, null) and not is_cvss_2, \"INFO\", \"LOW\"))))"
-                }
-            }')
-        query_id=$(echo "$start_response" | jq -r '.reply')
-
-        if [[ "$query_id" != *"_inv" ]]; then
-            echo "❌ Failed to start XQL query. Response details:"
-            echo "$start_response"
-            exit 1
-        fi
-
-        echo "XQL Query started successfully. Query ID: ${query_id}"
-
-
-        # Define initial status
-        echo "Retrieving results for Query ID: ${query_id}. Waiting for completion (pending_flag=true)..."
-        status="PENDING"
-
-        while [[ "$status" == "PENDING" ]]; do
-            # Execute API call to get results
-            results_response=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: ${CORTEX_API_KEY}" -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" "${CORTEX_API_URL}/public_api/v1/xql/get_query_results" -d '
-                {
-                    "request_data": {
-                        "query_id": "'$query_id'", 
-                        "pending_flag": true, 
-                        "limit": 100, 
-                        "format": "json"
-                    }
-                }')
-            status=$(echo "$results_response" | jq -r '.reply.status')
-            sleep 10
-        done
-
-        echo "Retrieve results status: $status"
-        # Print the full response for troubleshooting
-        if [[ "$status" == "SUCCESS" ]]; then
-          echo "$results_response" | jq '.reply.results.data' | jq 'map(.image_name = "'$IMAGE_NAME'")' > "image-${{ env.OUTPUT_FILE }}"
-        fi
-
-    
-    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
-      with:
-        name: image-scan-results
-        path: "image-${{ env.OUTPUT_FILE }}"
+        ./cortexcli \
+          image scan \
+          --timeout 600 \
+          --name $IMAGE_NAME \
+          $IMAGE_NAME
+          
