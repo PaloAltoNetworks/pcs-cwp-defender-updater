@@ -39,6 +39,7 @@ variable "job-cronjob_enabled" {
 variable "job-schedule" {
   description = "Defender Auto Updater CronJob schedule"
   type        = string
+  # cortex:skip=APPSEC_SECRET_181: False positive
   default     = "0 0 * * Sun"
 }
 

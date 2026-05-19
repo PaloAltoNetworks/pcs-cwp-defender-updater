@@ -2,6 +2,7 @@ compute:
   api_endpoint:                   # *Endpoint of Prisma Cloud Compute Console. Can be found under System > Utilities
   username:                       # Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
   password:                       # Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
+  # cortex:skip=APPSEC_SECRET_6: false positive
   secret:  compute-secret         # Name of the Secret to be used
   secret_store:                   # Integrate with External Secrets Operator 
     name:                         # Name of the Secrets Store where the Access to Prisma is located
@@ -16,6 +17,7 @@ job:
   timezone: "Etc/UTC"             # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
   image_name:                     # *Name of the image to be used. Must be full path ej REGISTRY_NAME/IMAGE_NAME:IMAGE_TAG
   image_pull_policy: Always       # Pull policy of the CronJob image.
+  # cortex:skip=APPSEC_SECRET_6: false positive
   image_pull_secret: twistlock-updater-pull-secret # Name of the secret needed to pull the CronJob image.
   registry:                       # Variables used to authenticate with external registry to pull the CronJob image. Not needed if the secret has already been created                  
     name:                         # Name of the registry
