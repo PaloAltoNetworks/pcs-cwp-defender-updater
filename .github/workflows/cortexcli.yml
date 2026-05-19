@@ -68,7 +68,7 @@ jobs:
         
     - name: Dismiss alerts
       if: github.ref == 'refs/heads/main'
-      uses: advanced-security/dismiss-alerts@v1
+      uses: advanced-security/dismiss-alerts@046d6b48d2e43cf563f96f67332c47c432eff83e
       with:
         # specify a 'sarif-id' and directory containing SARIF files
         sarif-id: ${{ steps.upload.outputs.sarif-id }}
