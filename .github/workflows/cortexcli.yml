@@ -55,13 +55,14 @@ jobs:
           --output-format json \
           $IMAGE_NAME)
 
-        echo "$results" | sed -n 's/.*<SCAN_INTRO_START>\(.*\)<SCAN_INTRO_END>.*/\1/p' | jq . > scanIntro.json
-        echo "$results" | sed 's/<SCAN_INTRO_START>.*<SCAN_INTRO_END>//g' | sed '/^[[:space:]]*$/d' | jq . > $OUTPUT_FILE
+        echo "Storing results"
+        mkdir results
+        echo "$results" | sed -n 's/.*<SCAN_INTRO_START>\(.*\)<SCAN_INTRO_END>.*/\1/p' | jq . > results/scanIntro.json
+        echo "$results" | sed 's/<SCAN_INTRO_START>.*<SCAN_INTRO_END>//g' | sed '/^[[:space:]]*$/d' | jq . > "results/$OUTPUT_FILE"
 
     - name: Uploade results
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       if: success() || failure()
       with:
         name: cwp-results
-        path: *.json
-      
+        path: ./results
