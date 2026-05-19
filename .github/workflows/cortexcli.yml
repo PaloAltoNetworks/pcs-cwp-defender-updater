@@ -17,6 +17,7 @@ jobs:
       CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
       CORTEX_API_BASE_URL: ${{ secrets.CORTEX_API_BASE_URL || secrets.CORTEX_API_URL }}
       IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
+      OUTPUT_FILE: "results.json"
 
     steps:
     # Initial Setup
@@ -47,10 +48,20 @@ jobs:
 
     - name: Cortex CLI Image Scan
       run: |
-        ./cortexcli \
+        results=$(./cortexcli \
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
           --output-format json \
-          $IMAGE_NAME
-          
+          $IMAGE_NAME)
+
+        echo "$results" | sed -n 's/.*<SCAN_INTRO_START>\(.*\)<SCAN_INTRO_END>.*/\1/p' | jq . > scanIntro.json
+        echo "$results" | sed 's/<SCAN_INTRO_START>.*<SCAN_INTRO_END>//g' | sed '/^[[:space:]]*$/d' | jq . > $OUTPUT_FILE
+
+    - name: Uploade results
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      if: success() || failure()
+      with:
+        name: cwp-results
+        path: *.json
+      
