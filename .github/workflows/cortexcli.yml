@@ -51,5 +51,6 @@ jobs:
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
+          --output-format json \
           $IMAGE_NAME
           
