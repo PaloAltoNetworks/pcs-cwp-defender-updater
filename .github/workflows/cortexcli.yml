@@ -1,7 +1,10 @@
 name: CortexCLI Scan
 
 on:
+  pull_request:
+    branches: [main]
   push:
+    branches: [main]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
@@ -54,9 +57,22 @@ jobs:
           --output sarif \
           --output-file-path "results.sarif"
     
-    # Upload the results to github advanced security
+    # Handle the SARIF results
     - name: Upload SARIF file
+      id: upload
       uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e
       if: success() || failure()
       with:
         sarif_file: results.sarif
+        wait-for-processing: true
+        
+    - name: Dismiss alerts
+      if: github.ref == 'refs/heads/main'
+      uses: advanced-security/dismiss-alerts@v1
+      with:
+        # specify a 'sarif-id' and directory containing SARIF files
+        sarif-id: ${{ steps.upload.outputs.sarif-id }}
+        sarif-file: results.sarif
+      env:
+        GITHUB_TOKEN: ${{ github.token }}   
+    
