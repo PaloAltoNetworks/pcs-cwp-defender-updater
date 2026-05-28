@@ -49,17 +49,14 @@ jobs:
     - name: Cortex CLI Image Scan
       run: |
         results=$(./cortexcli \
-          --soft-fail \
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
           --ci-build-id "${{ github.run_number }}" \
-          --ci-pipeline-id "${{ github.repositoryUrl }}" \
+          --ci-pipeline-id "${{ github.repository }}" \
           --output-format json \
           $IMAGE_NAME)
-        echo "Ouput error if any"
-        cat $HOME/.cortexcli/logs/cortexcli-*.log | grep "ERROR" || echo "No error found"
-        
+
         echo "Storing results"
         mkdir results
         echo "$results" | sed -n 's/.*<SCAN_INTRO_START>\(.*\)<SCAN_INTRO_END>.*/\1/p' | jq . > results/scanIntro.json
