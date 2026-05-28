@@ -53,8 +53,8 @@ jobs:
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
-          --build-id ${{ github.run_id }} \
-          --pipeline-id ${{ github.repository_id }} \
+          --ci-build-id "${{ github.run_number }}" \
+          --ci-pipeline-id "${{ github.repositoryUrl }}" \
           --output-format json \
           $IMAGE_NAME)
         echo "Ouput error if any"
