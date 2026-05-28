@@ -53,7 +53,7 @@ jobs:
           --timeout 600 \
           --name $IMAGE_NAME \
           --build-id ${{ github.run_id }} \
-          --pipeline-id ${{ github.action }} \
+          --pipeline-id ${{ github.repository_id }} \
           --output-format json \
           $IMAGE_NAME)
 
