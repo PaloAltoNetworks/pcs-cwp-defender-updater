@@ -52,6 +52,8 @@ jobs:
           image scan \
           --timeout 600 \
           --name $IMAGE_NAME \
+          --build-id ${{ github.run_id }} \
+          --pipeline-id ${{ github.action }} \
           --output-format json \
           $IMAGE_NAME)
 
