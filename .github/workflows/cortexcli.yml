@@ -16,8 +16,8 @@ jobs:
       CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
       CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
       CORTEX_API_BASE_URL: ${{ secrets.CORTEX_API_BASE_URL || secrets.CORTEX_API_URL }}
-      IMAGE_NAME: "${{ vars.IMAGE_NAME }}:latest"
       OUTPUT_FILE: "results.json"
+      DOCKERFILE: ${{ vars.DOCKERFILE || 'Dockerfile' }}
 
     steps:
     # Initial Setup
@@ -31,6 +31,25 @@ jobs:
         curl -o cortexcli $crtx_url
         chmod +x cortexcli
         ./cortexcli --version
+        
+    # (Optionally) inject repository labels
+    - name: Inject Labels
+      run: |
+        IMAGE_NAME=${{ vars.IMAGE_NAME || 'none' }}
+        [[ $IMAGE_NAME == "none" ]] && IMAGE_NAME=$(echo "${{ github.repository }}:${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
+        echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+        sed -i '3 i LABEL REPOSITORY="${{ github.repository }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL REPOSITORY_URL="${{ github.repositoryUrl }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL REPOSITORY_OWNER="${{ github.repository_owner }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL ACTOR="${{ github.actor }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL JOB="${{ github.job }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL RUN_ID="${{ github.run_id }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL RUN_NUMBER="${{ github.run_number }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL RUN_ATTEMPT="${{ github.run_attempt }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL EVENT_NAME="${{ github.event_name }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL SOURCE_BRANCH="${{ github.head_ref }}"' ${{ env.DOCKERFILE }}
+        sed -i '3 i LABEL TARGET_BRANCH="${{ github.base_ref }}"' ${{ env.DOCKERFILE }}
+
   
     # Do CWP image scanning
     - name: CWP Image Scan Dependency
