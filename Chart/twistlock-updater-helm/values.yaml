@@ -1,0 +1,103 @@
+compute:
+  api_endpoint:                   # *Endpoint of Prisma Cloud Compute Console. Can be found under System > Utilities
+  username:                       # Username to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Access Key
+  password:                       # Password to be used for Prisma Cloud Compute API calls. For SaaS, it can be the value of Secret Key
+  # cortex:skip=APPSEC_SECRET_6: false positive
+  secret:  compute-secret         # Name of the Secret to be used
+  secret_store:                   # Integrate with External Secrets Operator 
+    name:                         # Name of the Secrets Store where the Access to Prisma is located
+    kind: ClusterSecretStore      # Secrets Store kind
+    api_version: external-secrets.io/v1beta1 # External Secrets API version
+    refresh_interval: 1h          # Secrets refresh interval
+    remote_key:                   # Remote secret name
+ 
+job:
+  cronjob_enabled: true           # Enables CronJob execution. If not enabled, no persistant volume and cronJob will be created
+  schedule: "0 0 * * Sun"         # Time Schedule where the CronJob will be executed. Refer to https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+  timezone: "Etc/UTC"             # Time zone of current CronJob. if not set the Time will be UTC. Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones to get your current time zone
+  image_name:                     # *Name of the image to be used. Must be full path ej REGISTRY_NAME/IMAGE_NAME:IMAGE_TAG
+  image_pull_policy: Always       # Pull policy of the CronJob image.
+  # cortex:skip=APPSEC_SECRET_6: false positive
+  image_pull_secret: twistlock-updater-pull-secret # Name of the secret needed to pull the CronJob image.
+  registry:                       # Variables used to authenticate with external registry to pull the CronJob image. Not needed if the secret has already been created                  
+    name:                         # Name of the registry
+    username:                     # Username used for authentication.
+    password:                     # Password used for authentication.
+    dockerconfigjson:             # Credentials for pulling the CronJob image. It is the base 64 encoded of a Docker config file in JSON format. Not needed if the secret has already been created or registry values are set. 
+  secret_store:                   # Integrate with External Secrets Operator
+    name:                         # Name of the Secrets Store
+    kind: ClusterSecretStore      # Secrets Store kind
+    api_version: external-secrets.io/v1beta1 # External Secrets API version
+    refresh_interval: 1h          # Secrets refresh interval
+    remote_key:                   # Remote secret name
+  role_arn:                       # AWS role ARN for CronJob and Job
+  storage:                        # Storage settings for backups. Refer to https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+    size: 1Gi                     # Storage size for CronJob to write backup
+  debug: false                    # Print extended output of the CronJob
+  init_configmap:                 # Initial DeamonSet config in format of ConfigMap. You can use the following kubectl command: 'kubectl create configmap ${CONFIGMAP_NAME} --from-file=daemonset.yaml'
+  annotations:                    # CronJob annontations. Refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  start_now: true                 # Starts a Job to perform the defender installation process
+  start_ttl:                      # Seconds that the start Job will be kept. If set to 0 will delete after the Job succeded or failed
+  delete_all: true                # Delete all created resources by any the job if 'helm uninstall' command is executed 
+  successful_cronjobs: 3          # Amount of successfull CronJobs to be kept. If set to 0, none successfull CronJobs will be kept.
+  failed_cronjobs: 1              # Amount of failed CronJobs to be kept. If set to 0, none failed CronJobs will be kept.
+  node_selector:                  # Node Selector for executed Jobs
+#    key: value
+  service_account:
+    name: twistlock-updater-service # Name of the service account to be used
+    annotations:                    # Additional annotations besides role_arn for AWS
+#      key: value
+
+
+defender:
+  version_tag:                    # Prisma Cloud tag used to determine the defender version to be installed
+  console_name: ""                # Name of the console to be connected to. Not needed for SaaS version. For self-hosted, if not set, it will take the first SAN Name that appears under Manage > Defenders > Names
+  communication_port: ""          # Overrides the Defender - Console default communication port.
+  orchestrator: kubernetes        # Orchestartor to be used. Only tested with kubernetes
+  container_runtime: containerd   # Name of container runtime to be used. Can be only the following values: docker, containerd or crio.
+  collect_pod_labels: false       # Allow collection of labels on pods
+  monitor_service_accounts: false # Allow service account monitoring
+  cluster_name_resolving_method: default # Is the method used to resolve the cluster name, could be default, manual or api-server.
+  cluster_name: ""                # Overrides the name of the cluster to be used. By default, the defender detects the cluster name. It is required if the cluster_name_resolving_method is set to manual
+  runtime_socket_path: ""         # Container runtime socket path
+  node_selector: ''               # Specify on which nodes will the deamonset apply to. Format: 'key: "value"'
+  role_arn: ""                    # AWS role ARN for DaemonSet defender 
+  unique_hostname: true           # Assign unique hostnames to each defended host
+  monitor_istio: false            # Allow istio monitoring
+  bottlerocket: false             # Deployment made over BottleRocket OS nodes
+  gke_autopilot: false            # Deployment made over GKE Autopilot
+  talos: false                    # Deployment made over Talos nodes
+  image_name: ""                  # Overrides the default defender image to be used
+  image_pull_secret: ""           # Secret for pulling the defender image
+  selinux: false                  # Deployment made using SELinux Policies
+  privileged: false               # Set DaemonSet Pods as Privileged 
+  cpu_limit:                      # Sets the limit of Defender CPU usage. If not set it will take the default value of 900m
+  memory_limit:                   # Sets the limit of Defender Memory usage. If not set it will take the default value of 512Mi
+  ephemeral_storage_limit:        # Sets the limit of Defender Ephemeral Storage. No default value
+  cpu_request:                    # Sets the request of Defender CPU. If not set it will take the default value of 256m
+  memory_request:                 # Sets the request of Defender Memory. No default value
+  ephemeral_storage_request:      # Sets the request of Defender Ephemeral Storage. No default value
+  priority_class_name: ""         # Name of the PriorityClass. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+  project_id: ""                  # Project ID where the Defender is going to point to. Used for self-hosted only.
+  region: ""                      # Cloud region where the cluster is localed
+  proxy:                          # Proxy settings. Needed if defender requires to connect to a proxy before connecting to the compute console
+    ca:                           # CA Bundle for connecting to the proxy
+    httpProxy:                    # Proxy URL
+    noProxy:                      # Pods that bypass the proxy
+    password:                     # Password to be used to connect to the proxy
+    user:                         # User to be used to connect to the proxy
+  tolerations:                    # Tolerations configuration to install the defender on master nodes. Refer to https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+#  - operator: Exists
+#    effect: NoSchedule
+#  - operator: Exists
+#    effect: PreferNoSchedule
+#  - operator: Exists
+#    effect: NoExecute
+  annotations:                    # Defender DaemonSet annotations
+#    key: value
+  node_name:                      # Hostname of the node where the defender will be installed. Used for Rollback
+
+# NOTES 
+# - If it has * in it's description, means it is a required value
+# - If  the secret compute.secret exists already, there's no need to define the values of compute.username and compute.password
+# - If the secret job.image_pull_secret exists already, there's no need to define the value job.pull_secret_dockerconfigjson

@@ -1,0 +1,211 @@
+{{- if .Values.job.cronjob_enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+{{- if .Values.job.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.job.annotations }}
+    {{ $key }}: {{ $val }}
+  {{- end}}
+{{- end}}
+  labels:
+    app: twistlock-updater
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: twistlock-updater
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: {{ .Values.job.schedule | quote }}
+  timeZone: {{ .Values.job.timezone | quote }}
+  successfulJobsHistoryLimit: {{ .Values.job.successful_cronjobs }}
+  failedJobsHistoryLimit: {{ .Values.job.failed_cronjobs }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: twistlock-updater
+          creationTimestamp: null
+          {{- if .Values.defender.gke_autopilot }}
+          annotations:
+            autopilot.gke.io/no-connect: "true"
+          {{- end }}
+          labels:
+            app: twistlock-updater
+            helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        spec:
+          serviceAccountName: twistlock-updater-service
+          securityContext:
+          {{- if eq .Values.defender.orchestrator "kubernetes" }}
+            fsGroup: 10001
+          {{- end }}
+            seccompProfile:
+              type: RuntimeDefault
+        {{- if .Values.job.image_pull_secret }}
+          imagePullSecrets:
+          - name: {{ .Values.job.image_pull_secret }}
+        {{- end }}
+        {{- if .Values.job.node_selector }}
+          {{- range $key, $val := .Values.job.node_selector }}
+          nodeSelector:
+            {{ $key }}: {{ $val }}
+          {{- end}}
+        {{- end }}
+          containers:
+          - image: {{ .Values.job.image_name }}
+            name: twistlock-updater
+            env:
+            - name: COMPUTE_API_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.compute.secret }}
+                  key: compute_api_endpoint
+            - name: PRISMA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.compute.secret }}
+                  key: username
+            - name: PRISMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.compute.secret }}
+                  key: password
+            - name: SKIP_VERIFY
+              value: {{ .Values.compute.skip_verify | quote }}
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: CONSOLE_NAME
+              value: {{ .Values.defender.console_name | quote }}
+            - name: COMMUNICATION_PORT
+              value: {{ .Values.defender.communication_port | quote }}
+            - name: ORCHESTRATOR
+              value: {{ .Values.defender.orchestrator | quote }}
+            - name: CONTAINER_RUNTIME
+              value: {{ .Values.defender.container_runtime | quote }}
+            - name: COLLECT_POD_LABELS
+              value: {{ .Values.defender.collect_pod_labels | quote }}
+            - name: MONITOR_SERVICEACCOUNTS
+              value: {{ .Values.defender.monitor_service_accounts | quote }}
+            - name: CLUSTER_NAME_RESOLVING_METHOD
+              value: {{ .Values.defender.cluster_name_resolving_method | quote }}
+            - name: CLUSTER_NAME
+              value: {{ .Values.defender.cluster_name | quote }}
+            - name: RUNTIME_SOCKET_PATH
+              value: {{ .Values.defender.runtime_socket_path | quote }}
+            - name: NODE_SELECTOR
+              value: {{ .Values.defender.node_selector | squote }}
+            - name: ROLE_ARN
+              value: {{ .Values.defender.role_arn | quote }}
+            - name: UNIQUE_HOSTNAME
+              value: {{ .Values.defender.unique_hostname | quote }}
+            - name: MONITOR_ISTIO
+              value: {{ .Values.defender.monitor_istio | quote }}
+            - name: BOTTLEROCKET
+              value: {{ .Values.defender.bottlerocket | quote }}
+            - name: GKE_AUTOPILOT
+              value: {{ .Values.defender.gke_autopilot | quote }}
+            - name: TALOS
+              value: {{ .Values.defender.talos | quote }}
+            - name: IMAGE_NAME
+              value: {{ .Values.defender.image_name | quote }}
+            - name: IMAGE_PULL_SECRET
+              value: {{ .Values.defender.image_pull_secret | quote }}
+            - name: SELINUX
+              value: {{ .Values.defender.selinux | quote }}
+            - name: PRIVILEGED
+              value: {{ .Values.defender.privileged | quote }}
+            {{- if .Values.defender.cpu_limit }}
+            - name: CPU_LIMIT
+              value: {{ .Values.defender.cpu_limit | quote }}
+            {{- end }}
+            {{- if .Values.defender.memory_limit }}
+            - name: MEMORY_LIMIT
+              value: {{ .Values.defender.memory_limit | quote }}
+            {{- end }}
+            {{- if .Values.defender.ephemeral_storage_limit }}
+            - name: EPHEMERAL_STORAGE_LIMIT
+              value: {{ .Values.defender.ephemeral_storage_limit | quote }}
+            {{- end }}
+            {{- if .Values.defender.cpu_request }}
+            - name: CPU_REQUEST
+              value: {{ .Values.defender.cpu_request | quote }}
+            {{- end }}
+            {{- if .Values.defender.memory_request }}
+            - name: MEMORY_REQUEST
+              value: {{ .Values.defender.memory_request | quote }}
+            {{- end }}
+            {{- if .Values.defender.ephemeral_storage_request }}
+            - name: EPHEMERAL_STORAGE_REQUEST
+              value: {{ .Values.defender.ephemeral_storage_request | quote }}
+            {{- end }}
+            - name: PRIORITY_CLASS_NAME
+              value: {{ .Values.defender.priority_class_name | quote }}
+            - name: PROJECT_ID
+              value: {{ .Values.defender.project_id | quote }}
+            - name: REGION
+              value: {{ .Values.defender.region | quote }}
+            - name: DEBUG
+              value: {{ .Values.job.debug | quote }}
+            {{- if .Values.defender.version_tag }}
+            - name: VERSION_TAG
+              value: {{ .Values.defender.version_tag | quote }}
+            {{- end }}
+            - name: NODE_NAME
+            {{- if .Values.defender.node_name }}
+              value: {{ .Values.defender.node_name | quote }}
+            {{- else }}  
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- end }}
+            securityContext:
+              allowPrivilegeEscalation: false
+              runAsNonRoot: true
+              readOnlyRootFilesystem: true
+            {{- if eq .Values.defender.orchestrator "kubernetes" }}
+              runAsUser: 10001
+            {{- end }}
+              capabilities:
+                drop:
+                - ALL
+            imagePullPolicy: {{ .Values.job.image_pull_policy }}
+            volumeMounts:
+            - mountPath: /app/twistlock
+              name: twistlock-updater-data
+            {{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
+            - mountPath: /app/config
+              name: daemonset-extra-config
+            {{- end}}
+            {{- if .Values.job.init_configmap }} 
+            - mountPath: /app/init
+              name: {{ .Values.job.init_configmap }}
+            {{- end}}
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 50m
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          volumes:
+          - name: twistlock-updater-data
+            emptyDir:
+              sizeLimit: {{ .Values.job.storage.size }}
+        {{- if or .Values.defender.annotations .Values.defender.proxy.httpProxy .Values.defender.tolerations }} 
+          - name: daemonset-extra-config
+            configMap:
+              name: daemonset-extra-config
+              items:
+              - key: daemonset.extraconfig.yaml
+                path: daemonset.extraconfig.yaml
+          {{- end }}
+          {{- if .Values.job.init_configmap }}
+          - name: {{ .Values.job.init_configmap }}
+            configMap:
+              name: {{ .Values.job.init_configmap }}
+              items:
+              - key: daemonset.yaml
+                path: daemonset.yaml
+          {{- end }}
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+{{- end }}

@@ -1,0 +1,101 @@
+{{- if or (eq .Values.defender.orchestrator "openshift") .Values.defender.monitor_istio .Values.defender.monitor_service_accounts .Values.defender.collect_pod_labels }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: twistlock-updater-clusterrole
+rules:
+{{- if eq .Values.defender.orchestrator "openshift" }}
+# Allow Create SecurityContextConstraints
+- apiGroups: 
+  - security.openshift.io
+  resources: 
+  - securitycontextconstraints 
+  verbs: 
+  - create
+- apiGroups: 
+  - security.openshift.io
+  resources: securitycontextconstraints
+  resourceNames: twistlock-scc
+  verbs:
+  - get
+  - delete
+{{- end}}
+{{- if or .Values.defender.monitor_istio .Values.defender.monitor_service_accounts .Values.defender.collect_pod_labels }}
+# Allow Defenders to list RBAC resources
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - clusterroles 
+  - clusterrolebindings
+  verbs: 
+  - create
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - clusterroles
+  - clusterrolebindings
+  resourceNames: 
+  - twistlock-view
+  - twistlock-view-binding
+  verbs: 
+  - get
+  - delete
+{{- if .Values.defender.monitor_service_accounts }}
+# Allow Defenders to list RBAC resources
+- apiGroups: 
+  - rbac.authorization.k8s.io
+  resources: 
+  - roles
+  - rolebindings
+  - clusterroles
+  - clusterrolebindings 
+  verbs: 
+  - list
+{{- end}}
+{{- if .Values.defender.monitor_istio }}
+# Allow Defenders to list Istio security resources
+- apiGroups: 
+  - ""
+  - security.istio.io
+  - networking.istio.io
+  resources: 
+  - authorizationpolicies
+  - peerauthentications 
+  - virtualservices
+  - destinationrules
+  - gateways
+  - pods
+  - endpoints
+  - services
+  verbs: 
+  - list
+- apiGroups: 
+  - networking.istio.io # Allow Defenders to list Istio networking resources
+  resources: 
+  - virtualservices
+  - destinationrules
+  - gateways
+  verbs: 
+  - list
+- apiGroups: 
+  - ""
+  resources: 
+  - pods/proxy # Allow Defenders to get pod proxy
+  verbs: 
+  - get
+{{- end}}
+{{- if .Values.defender.collect_pod_labels }}
+# Allow Defenders to get Deployments, ReplicaSets, Namespaces and Pods
+- apiGroups: 
+  - ""
+  - apps
+  resources: 
+  - deployments
+  - replicasets 
+  - namespaces
+  - pods 
+  verbs: 
+  - get
+{{- end}}
+{{- end}}
+{{- end}}
