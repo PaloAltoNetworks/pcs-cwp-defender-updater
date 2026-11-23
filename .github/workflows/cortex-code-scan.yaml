@@ -45,6 +45,7 @@ jobs:
 
         # Upload results to GHAS
       - name: Upload SARIF results
+        if: always()
         uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
         with:
           sarif_file: cortex-results.sarif
