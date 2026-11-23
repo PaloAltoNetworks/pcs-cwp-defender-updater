@@ -16,6 +16,9 @@ jobs:
       - name: Build Docker image
         run: docker build -t myapp:${{ github.sha }} .
 
+      - name: Install dependency
+        run: sudo apt install libhyperscan5 -y
+
       - name: Scan container image
         uses: PaloAltoNetworks/cortex-cloud-scan@3a5f413ae5a63d0da6d069eca9e628fece0603a7
         with:
