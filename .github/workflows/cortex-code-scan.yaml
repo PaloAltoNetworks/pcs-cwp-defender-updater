@@ -30,8 +30,6 @@ jobs:
           repo-id: ${{ github.repository }}
           branch: ${{ github.ref_name }}
           upload-mode: no-upload
-          framework: terraform,kubernetes,secrets
-          severity: critical,high
           output-format: sarif
           output-file-path: cortex-results.sarif
 
