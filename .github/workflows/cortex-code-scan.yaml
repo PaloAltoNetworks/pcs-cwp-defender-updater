@@ -8,7 +8,7 @@ on:
   workflow_dispatch: 
 
 jobs:
-  code-scan:
+  cortex-code-scan:
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -32,6 +32,15 @@ jobs:
           upload-mode: no-upload
           output-format: sarif
           output-file-path: cortex-results.sarif
+
+        # Format SARIF to be ready for GHAS
+      - name: Format SARIF
+        run: |
+          jq '(.runs[].tool.driver.rules[]? | select(.helpUri != null)) |= (.help.markdown = (.help.text + "\n\n**More Info:** [Rule Reference](" + .helpUri + ")"))' cortex-results.sarif > tmp-results.sarif
+          jq '(.runs[].results[]?.suppressions[]?.kind) = "external"' tmp-results.sarif > cortex-results.sarif
+          jq '(.runs[].results[]?.locations[]?.physicalLocation.region? // empty) |= with_entries(if (.key | test("^(start|end)(Line|Column)$")) and (.value < 1) then .value = 1 else . end)' cortex-results.sarif > tmp-results.sarif 
+          mv tmp-results.sarif cortex-results.sarif 
+
 
         # Upload results to GHAS
       - name: Upload SARIF results
