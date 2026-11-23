@@ -1,0 +1,43 @@
+name: Cortex Code Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: 
+
+jobs:
+  code-scan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    steps:
+        # Perform Code Check out
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+        # Scan Code
+      - name: Run Cortex Code Security Scan
+        uses: PaloAltoNetworks/cortex-cloud-scan@3a5f413ae5a63d0da6d069eca9e628fece0603a7
+        with:
+          scan-type: code
+          api-base-url: ${{ secrets.CORTEX_API_BASE_URL }}
+          api-key: ${{ secrets.CORTEX_API_KEY }}
+          api-key-id: ${{ secrets.CORTEX_API_KEY_ID }}
+          directory: .
+          repo-id: ${{ github.repository }}
+          branch: ${{ github.ref_name }}
+          upload-mode: no-upload
+          framework: terraform,kubernetes,secrets
+          severity: critical,high
+          output-format: sarif
+          output-file-path: cortex-results.sarif
+
+        # Upload results to GHAS
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
+        if: always()
+        with:
+          sarif_file: cortex-results.sarif
