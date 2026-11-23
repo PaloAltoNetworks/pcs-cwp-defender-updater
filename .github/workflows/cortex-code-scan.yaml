@@ -38,7 +38,7 @@ jobs:
         id: format_sarif
         if: success() || failure()
         run: |
-          jq -e . results.sarif > /dev/null # fails the step if the scan didn't produce valid SARIF
+          jq -e . cortex-results.sarif > /dev/null # fails the step if the scan didn't produce valid SARIF
           jq '(.runs[].tool.driver.rules[]? | select(.helpUri != null)) |= (.help.markdown = (.help.text + "\n\n**More Info:** [Rule Reference](" + .helpUri + ")"))' cortex-results.sarif > tmp-results.sarif
           jq '(.runs[].results[]?.suppressions[]?.kind) = "external"' tmp-results.sarif > cortex-results.sarif
           jq '(.runs[].results[]?.locations[]?.physicalLocation.region? // empty) |= with_entries(if (.key | test("^(start|end)(Line|Column)$")) and (.value < 1) then .value = 1 else . end)' cortex-results.sarif > tmp-results.sarif 
