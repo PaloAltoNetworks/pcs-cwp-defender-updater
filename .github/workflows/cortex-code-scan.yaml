@@ -35,8 +35,10 @@ jobs:
 
         # Format SARIF to be ready for GHAS
       - name: Format SARIF
+        id: format_sarif
         if: success() || failure()
         run: |
+          jq -e . results.sarif > /dev/null # fails the step if the scan didn't produce valid SARIF
           jq '(.runs[].tool.driver.rules[]? | select(.helpUri != null)) |= (.help.markdown = (.help.text + "\n\n**More Info:** [Rule Reference](" + .helpUri + ")"))' cortex-results.sarif > tmp-results.sarif
           jq '(.runs[].results[]?.suppressions[]?.kind) = "external"' tmp-results.sarif > cortex-results.sarif
           jq '(.runs[].results[]?.locations[]?.physicalLocation.region? // empty) |= with_entries(if (.key | test("^(start|end)(Line|Column)$")) and (.value < 1) then .value = 1 else . end)' cortex-results.sarif > tmp-results.sarif 
@@ -45,7 +47,7 @@ jobs:
 
         # Upload results to GHAS
       - name: Upload SARIF results
-        if: always()
+        if: always() && steps.format_sarif.outcome == 'success'
         uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
         with:
           sarif_file: cortex-results.sarif
