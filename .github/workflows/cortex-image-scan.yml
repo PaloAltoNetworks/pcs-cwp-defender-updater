@@ -1,0 +1,28 @@
+name: Cortex Image Scan
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  cortex-image-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Build Docker image
+        run: docker build -t myapp:${{ github.sha }} .
+
+      - name: Scan container image
+        uses: PaloAltoNetworks/cortex-cloud-scan@3a5f413ae5a63d0da6d069eca9e628fece0603a7
+        with:
+          scan-type: image
+          api-base-url: ${{ secrets.CORTEX_API_BASE_URL }}
+          api-key: ${{ secrets.CORTEX_API_KEY }}
+          api-key-id: ${{ secrets.CORTEX_API_KEY_ID }}
+          image: myapp:${{ github.sha }}
+          ci-pipeline-id: ${{ github.run_id }}
+          ci-build-id: ${{ github.run_number }}
