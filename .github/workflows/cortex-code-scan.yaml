@@ -20,7 +20,7 @@ jobs:
 
         # Scan Code
       - name: Run Cortex Code Security Scan
-        uses: jmontufar/cortex-cloud-scan@1d48be58b3815a8e093b126d1b5f558d0f955944
+        uses: jfmontufar/cortex-cloud-scan@1d48be58b3815a8e093b126d1b5f558d0f955944
         with:
           scan-type: code
           api-base-url: ${{ secrets.CORTEX_API_BASE_URL }}
