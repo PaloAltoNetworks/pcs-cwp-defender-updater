@@ -20,7 +20,7 @@ jobs:
 
         # Scan Code
       - name: Run Cortex Code Security Scan
-        uses: PaloAltoNetworks/cortex-cloud-scan@3a5f413ae5a63d0da6d069eca9e628fece0603a7
+        uses: jmontufar/cortex-cloud-scan@1d48be58b3815a8e093b126d1b5f558d0f955944
         with:
           scan-type: code
           api-base-url: ${{ secrets.CORTEX_API_BASE_URL }}
@@ -28,6 +28,7 @@ jobs:
           api-key-id: ${{ secrets.CORTEX_API_KEY_ID }}
           directory: .
           repo-id: ${{ github.repository }}
+          severity: high,critical
           branch: ${{ github.ref_name }}
           upload-mode: no-upload
           output-format: sarif
